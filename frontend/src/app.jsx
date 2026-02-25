@@ -12,8 +12,9 @@ import {
 
 import RequirementsForm from './components/RequirementsForm'
 import DiagramView from './components/DiagramView'
-import SimulationView from './components/SimulationView'
+import ProfessionalSimulator from './components/ProfessionalSimulator'
 import TraceabilityTable from './components/TraceabilityTable'
+
 
 import { cn } from "@/lib/utils"
 
@@ -141,15 +142,20 @@ export default function App() {
           </select>
         </header>
 
-        {/* Dynamic View Area - using full width */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="w-full h-full min-h-[600px] p-4 md:p-6 lg:p-10 pt-6 md:pt-10">
-            {view === 'requirements' && <RequirementsForm deviceType={deviceType} />}
-            {view === 'design' && <DiagramView deviceType={deviceType} />}
-            {view === 'simulation' && <SimulationView deviceType={deviceType} />}
-            {view === 'trace' && <TraceabilityTable deviceType={deviceType} />}
+        {/* Dynamic View Area */}
+        {view === 'simulation' ? (
+          <div className="flex-1 overflow-hidden flex flex-col">
+            <ProfessionalSimulator deviceType={deviceType} />
           </div>
-        </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto">
+            <div className="w-full h-full min-h-[600px] p-4 md:p-6 lg:p-10 pt-6 md:pt-10">
+              {view === 'requirements' && <RequirementsForm deviceType={deviceType} />}
+              {view === 'design' && <DiagramView deviceType={deviceType} />}
+              {view === 'trace' && <TraceabilityTable deviceType={deviceType} />}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )
