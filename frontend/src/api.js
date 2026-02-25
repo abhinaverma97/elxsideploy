@@ -6,6 +6,8 @@ const client = axios.create({
 })
 
 export const addRequirement = (r) => client.post('/requirements/', r)
+export const analyzeRequirement = (text, deviceType) =>
+  client.post('/requirements/analyze', { text, device_type: deviceType })
 export const buildDesign = (deviceType) => client.post('/design/build/', null, { params: { device_type: deviceType } })
 export const generateDesignDetails = (deviceType) => client.post('/design/generate-details/', null, { params: { device_type: deviceType } })
 

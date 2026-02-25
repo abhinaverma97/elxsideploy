@@ -1,6 +1,6 @@
 import os
 import json
-import requests
+from groq import Groq
 from fastapi import APIRouter
 from ..core.devices.class2.ventilator import Ventilator
 from ..core.devices.class1.pulse_oximeter import PulseOximeter
@@ -61,7 +61,16 @@ def build_design(device_type: str = "ventilator"):
 @router.post("/generate-details")
 def generate_design_details(device_type: str = "ventilator"):
     reqs = store.get_all()
-    reqs_text = "\n".join([f"- [{r.id}] {r.title}: {r.description}" for r in reqs])
+
+    def req_context(r):
+        lines = [f"- [{r.id}] {r.title}: {r.description}"]
+        if r.fr_text:
+            lines.append(f"  Functional Requirement: {r.fr_text}")
+        if r.nfr_text:
+            lines.append(f"  Non-Functional Requirement: {r.nfr_text}")
+        return "\n".join(lines)
+
+    reqs_text = "\n".join([req_context(r) for r in reqs])
     
     prompt = f"""
     You are an expert Systems Engineer designing a Class II/III Medical Device: {device_type.upper()}.
@@ -134,34 +143,24 @@ def generate_design_details(device_type: str = "ventilator"):
     }}
     """
     
-    api_key = os.environ.get("OPENROUTER_API_KEY", "")
+    api_key = os.environ.get("GROQ_API_KEY", "")
     if not api_key:
-        return {"error": "OPENROUTER_API_KEY environment variable is not set."}
+        return {"error": "GROQ_API_KEY environment variable is not set."}
         
     try:
-        response = requests.post(
-          url="https://openrouter.ai/api/v1/chat/completions",
-          headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-          },
-          data=json.dumps({
-            "model": "arcee-ai/trinity-mini:free",
-            "messages": [
-              {
-                "role": "user",
-                "content": prompt
-              }
+        client = Groq(api_key=api_key)
+        response = client.chat.completions.create(
+            model="openai/gpt-oss-20b",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
             ]
-          })
         )
-        data = response.json()
+        content = response.choices[0].message.content
         
-        if "error" in data:
-            return {"error": "OpenRouter API Error: " + str(data["error"])}
-            
-        content = data['choices'][0]['message']['content']
-        
+
         # Clean markdown wrappers if present
         content = content.strip()
         if content.startswith("```json"):

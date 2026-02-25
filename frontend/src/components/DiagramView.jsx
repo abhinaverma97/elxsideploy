@@ -238,7 +238,7 @@ export default function DiagramView({ deviceType }) {
         <div className="flex-1 flex flex-col items-center justify-center py-32 text-center rounded-2xl border-2 border-dashed border-white/5">
           <BrainCircuit className="h-12 w-12 text-muted-foreground/30 mb-4" />
           <p className="text-muted-foreground text-sm font-medium">No AI specifications generated yet.</p>
-          <p className="text-muted-foreground text-xs mt-1">Click "Generate OpenRouter Specs" to compile technical details.</p>
+          <p className="text-muted-foreground text-xs mt-1">Click "Generate Groq AI Specs" to compile technical details.</p>
         </div>
       )
     }
@@ -325,7 +325,7 @@ export default function DiagramView({ deviceType }) {
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Interactive Systems Engineering Dashboard</h2>
           <p className="text-muted-foreground text-sm mt-1">
-            Deterministic graph rendering and OpenRouter-powered specificiation decomposition for <strong>{deviceType}</strong>.
+            Deterministic graph rendering and Groq AI-powered specification decomposition for <strong>{deviceType}</strong>.
           </p>
         </div>
         <div className="flex gap-3">
@@ -333,7 +333,7 @@ export default function DiagramView({ deviceType }) {
             {loading ? 'Synthesizing...' : <><GitBranch className="h-4 w-4 text-[#38BDF8]" /> Generate Deterministic Flow</>}
           </Button>
           <Button onClick={handleGenerateAI} disabled={aiLoading} className="gap-2 bg-[#38BDF8] text-black hover:bg-[#38BDF8]/90 shadow-[0_0_15px_rgba(56,189,248,0.3)]">
-            {aiLoading ? 'Compiling AI Specs...' : <><BrainCircuit className="h-4 w-4" /> Generate OpenRouter Specs</>}
+            {aiLoading ? 'Compiling AI Specs...' : <><BrainCircuit className="h-4 w-4" /> Generate Groq AI Specs</>}
           </Button>
         </div>
       </div>

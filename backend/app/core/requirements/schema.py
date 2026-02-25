@@ -47,6 +47,10 @@ class Requirement(BaseModel):
     description: str
     parent_id: Optional[str] = None    # decomposition: SYS → SUB → COMP
 
+    # ── FR / NFR plain-text context ────────────────────────────────
+    fr_text: Optional[str] = None      # Functional requirement in plain language
+    nfr_text: Optional[str] = None     # Non-functional requirement in plain language
+
     # ── Classification ──────────────────────────────────────────────
     type: RequirementType
     priority: PriorityLevel = "SHALL"

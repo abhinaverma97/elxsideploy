@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { addRequirement } from '../api'
+import { addRequirement, analyzeRequirement } from '../api'
 import { ClipboardList, Plus, Sparkles, AlertCircle, Info, RotateCcw, CheckCircle2, Activity } from 'lucide-react'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
@@ -22,6 +22,8 @@ const SAMPLES = {
 		unit: 'cmH2O',
 		tolerance: '2.0',
 		status: 'Draft',
+		fr_text: 'The pneumatics subsystem shall control and deliver inspiratory pressure between 5–40 cmH2O in real time during each breath cycle.',
+		nfr_text: 'PIP regulation accuracy shall be within ±2 cmH2O at all flow rates. Pressure overshoot shall not exceed 5 cmH2O for more than 100ms.',
 		verification: { method: 'simulation', description: 'Run Digital Twin closed-loop patient lung simulation under fault conditions.' }
 	},
 	ventilator_interface: {
@@ -35,6 +37,8 @@ const SAMPLES = {
 		protocol: 'PWM (10kHz)',
 		parameter: 'DutyCycle',
 		status: 'Draft',
+		fr_text: 'The MCU shall output a 10kHz PWM signal on the valve control pin to modulate inspiratory gas flow.',
+		nfr_text: 'Signal latency from control loop trigger to valve actuation shall not exceed 2ms. PWM duty cycle resolution shall be minimum 12-bit.',
 		verification: { method: 'test', description: 'Oscilloscope measurement of MCU output pins.' }
 	},
 	ventilator_safety: {
@@ -52,6 +56,8 @@ const SAMPLES = {
 		clause: '201.12.4',
 		max_value: '60',
 		status: 'Draft',
+		fr_text: 'The safety monitor shall detect airway pressure >60 cmH2O, trigger a P1 alarm, and actuate the exhalation valve within one breath cycle.',
+		nfr_text: 'Alarm response time from threshold breach to valve open shall be ≤200ms. The safety path shall be hardware-independent from the main control loop.',
 		verification: { method: 'simulation', description: 'Simulate airway occlusion and measure electronic relief valve actuation time.' }
 	},
 	pulse_ox: {
@@ -67,6 +73,8 @@ const SAMPLES = {
 		unit: '%',
 		tolerance: "2.0",
 		status: 'Approved',
+		fr_text: 'The signal processing subsystem shall compute SpO2 from red and infrared photoplethysmography signals and output a reading every second.',
+		nfr_text: 'SpO2 accuracy shall be ±2% RMS for saturations 70–100% per ISO 80601-2-61. Measurement latency shall not exceed 8 seconds from probe application.',
 		verification: { method: 'test', description: 'Functional verification using a calibrated SpO2 simulator.' }
 	},
 	dialysis: {
@@ -83,6 +91,8 @@ const SAMPLES = {
 		standard: 'ISO 60601-2-16',
 		clause: '201.12.4.102',
 		status: 'Draft',
+		fr_text: 'The ultrasonic bubble detector shall continuously monitor the venous line and command an immediate blood pump stop upon air detection.',
+		nfr_text: 'Bubble detection response time shall be ≤500ms. The detector shall identify bubbles ≥0.5mL. False positive rate shall be <1 per 24 hours of therapy.',
 		verification: { method: 'simulation', description: 'Inject air into virtual sensor and verify pump cutoff response time.' }
 	},
 	dialysis_performance: {
@@ -98,6 +108,8 @@ const SAMPLES = {
 		unit: 'mL/hr',
 		tolerance: '30.0',
 		status: 'Draft',
+		fr_text: 'The UF control loop shall calculate and maintain the prescribed fluid removal rate by balancing dialysate inflow and outflow using gravimetric feedback.',
+		nfr_text: 'Cumulative UF volume error shall not exceed ±1% or ±50mL over a 4-hour session. Control loop update rate shall be ≥1Hz.',
 		verification: { method: 'simulation', description: 'Run Digital Twin closed-loop fluid mass balance integration over 4 hours.' }
 	},
 	dialysis_interface: {
@@ -111,6 +123,8 @@ const SAMPLES = {
 		protocol: 'CAN-FD (1Mbps)',
 		parameter: 'RotorSpeed_RPM',
 		status: 'Draft',
+		fr_text: 'The master MCU shall transmit rotor speed setpoints to the blood pump motor driver over redundant CAN-FD buses at 10ms intervals.',
+		nfr_text: 'CAN-FD message latency shall be ≤1ms. Both buses shall agree within one message cycle; discrepancy shall trigger a safe-state transition within 20ms.',
 		verification: { method: 'test', description: 'Logic analyzer capture of redundant CAN frames.' }
 	},
 	dialysis_regulatory: {
@@ -123,9 +137,12 @@ const SAMPLES = {
 		status: 'Approved',
 		standard: 'ISO 10993-1',
 		clause: 'Clause 4',
+		fr_text: 'All tubing, connectors, and membrane materials in the blood circuit shall pass ISO 10993 cytotoxicity, haemocompatibility, and sensitisation tests.',
+		nfr_text: 'Biocompatibility certification shall be maintained for the full device lifecycle. Re-evaluation shall be triggered by any material or supplier change.',
 		verification: { method: 'inspection', description: 'Review material data sheets and leachables/extractables report.' }
 	}
 }
+
 
 const INITIAL_STATE = {
 	id: 'REQ-NEW-001',
@@ -149,6 +166,8 @@ const INITIAL_STATE = {
 	probability: 'Remote',
 	standard: '',
 	clause: '',
+	fr_text: '',
+	nfr_text: '',
 	verification: { method: 'test', description: '' }
 }
 
@@ -181,7 +200,37 @@ export default function RequirementsForm({ deviceType }) {
 		e.preventDefault()
 		setLoading(true)
 
-		const payload = { ...req, verification: { ...req.verification } }
+		let enriched = { ...req, verification: { ...req.verification } }
+
+		// Silently enrich empty fields from FR/NFR text if provided
+		const hasFrNfr = enriched.fr_text?.trim() || enriched.nfr_text?.trim()
+		if (hasFrNfr) {
+			try {
+				const combinedText = [enriched.fr_text, enriched.nfr_text].filter(Boolean).join(' ')
+				const res = await analyzeRequirement(combinedText, deviceType)
+				const f = res.data.fields
+				// Only backfill fields the user left empty
+				if (!enriched.subsystem && f.subsystem) enriched.subsystem = f.subsystem
+				if (enriched.type === 'functional' && f.type && f.type !== 'functional') enriched.type = f.type
+				if (!enriched.parameter && f.parameter) enriched.parameter = f.parameter
+				if (!enriched.unit && f.unit) enriched.unit = f.unit
+				if (!enriched.min_value && f.min_value != null) enriched.min_value = String(f.min_value)
+				if (!enriched.max_value && f.max_value != null) enriched.max_value = String(f.max_value)
+				if (!enriched.response_time_ms && f.response_time_ms != null) enriched.response_time_ms = String(f.response_time_ms)
+				if (!enriched.hazard && f.hazard) enriched.hazard = f.hazard
+				if (enriched.severity === 'Low' && f.severity && f.severity !== 'Low') enriched.severity = f.severity
+				if (!enriched.standard && f.standard) enriched.standard = f.standard
+				if (!enriched.clause && f.clause) enriched.clause = f.clause
+				if (!enriched.verification.description && f.verification_description)
+					enriched.verification.description = f.verification_description
+				// Sync back to display
+				setReq(enriched)
+			} catch (_) {
+				// Silent — proceed with what user entered
+			}
+		}
+
+		const payload = { ...enriched, verification: { ...enriched.verification } }
 		if (payload.min_value !== '') payload.min_value = parseFloat(payload.min_value)
 		if (payload.max_value !== '') payload.max_value = parseFloat(payload.max_value)
 		if (payload.tolerance !== '') payload.tolerance = parseFloat(payload.tolerance)
@@ -193,7 +242,7 @@ export default function RequirementsForm({ deviceType }) {
 
 		try {
 			await addRequirement(payload)
-			setMsg({ type: 'success', text: `Requirement ${req.id} added successfully.` })
+			setMsg({ type: 'success', text: `Requirement ${enriched.id} added successfully.` })
 			setSubmittedReqs(prev => [payload, ...prev].slice(0, 5))
 		} catch (err) {
 			console.error('SUBMIT_ERROR:', err)
@@ -220,20 +269,18 @@ export default function RequirementsForm({ deviceType }) {
 
 	return (
 		<div className="space-y-6">
-			{/* Page Header Area */}
+			{/* Page Header */}
 			<div className="flex items-center justify-between pb-4 border-b border-white/5">
 				<div>
-					<h2 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
-						Integrated Requirement Intake
-					</h2>
-					<p className="text-muted-foreground text-sm mt-1">Full-schema deterministic definition for {deviceType}.</p>
+					<h2 className="text-2xl font-semibold tracking-tight">Requirements Intake</h2>
+					<p className="text-muted-foreground text-sm mt-1">Define functional and non-functional requirements for {deviceType}.</p>
 				</div>
 				<div className="flex gap-2">
 					<Button variant="outline" size="sm" onClick={resetForm} className="bg-transparent border-white/10 hover:bg-white/5">
 						<RotateCcw className="mr-2 h-4 w-4" /> Reset
 					</Button>
 					<Button variant="secondary" size="sm" onClick={() => loadSample()} className="bg-white/10 hover:bg-white/15 text-white">
-						<Sparkles className="mr-2 h-4 w-4" /> Load System Sample
+						<Sparkles className="mr-2 h-4 w-4" /> Load Sample
 					</Button>
 					{deviceType === 'ventilator' && (
 						<>
@@ -373,6 +420,30 @@ export default function RequirementsForm({ deviceType }) {
 							onChange={e => setReq({ ...req, description: e.target.value })}
 							required
 						/>
+					</div>
+
+					{/* FR / NFR Sections */}
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="space-y-2">
+							<SectionHeader title="Functional Requirement" icon={ClipboardList} />
+							<p className="text-[11px] text-[#878787] -mt-2">What the system must DO — actions, outputs, measurable behaviors.</p>
+							<textarea
+								className="flex w-full rounded-md border border-white/10 bg-[#171717] px-3 py-2 text-sm text-[#ececec] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/20 min-h-[90px] resize-y"
+								value={req.fr_text}
+								onChange={e => setReq({ ...req, fr_text: e.target.value })}
+								placeholder="e.g. The device shall deliver tidal volumes between 200–2000 mL with ±5% accuracy."
+							/>
+						</div>
+						<div className="space-y-2">
+							<SectionHeader title="Non-Functional Requirement" icon={ClipboardList} />
+							<p className="text-[11px] text-[#878787] -mt-2">HOW the system must behave — reliability, speed, compliance, EMI, safety.</p>
+							<textarea
+								className="flex w-full rounded-md border border-white/10 bg-[#171717] px-3 py-2 text-sm text-[#ececec] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/20 min-h-[90px] resize-y"
+								value={req.nfr_text}
+								onChange={e => setReq({ ...req, nfr_text: e.target.value })}
+								placeholder="e.g. Alarm response time shall not exceed 500ms. Device shall be EMI-compliant per IEC 60601-1-2."
+							/>
+						</div>
 					</div>
 
 					{/* CONDITIONAL SECTIONS */}
