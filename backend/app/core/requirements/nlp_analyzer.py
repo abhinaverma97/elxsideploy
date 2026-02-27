@@ -64,8 +64,16 @@ def analyze_requirement_text(text: str, device_type: str = "ventilator") -> dict
     Returns structured dict or raises ValueError on failure.
     """
     api_key = os.environ.get("GROQ_API_KEY_REQ", "")
+    # Fallback: try loading .env and then GROQ_API_KEY if specific var not set
     if not api_key:
-        raise ValueError("GROQ_API_KEY_REQ environment variable is not set.")
+        try:
+            from dotenv import load_dotenv
+            load_dotenv()
+        except Exception:
+            pass
+        api_key = os.environ.get("GROQ_API_KEY_REQ", "") or os.environ.get("GROQ_API_KEY", "")
+    if not api_key:
+        raise ValueError("GROQ_API_KEY_REQ or GROQ_API_KEY environment variable is not set.")
 
     subsystems = DEVICE_SUBSYSTEMS.get(device_type.lower(), [])
     subsystems_hint = ", ".join(subsystems) if subsystems else "infer from context"
@@ -79,12 +87,33 @@ Requirement text:
 Extract and return the JSON fields."""
 
     try:
+        # Ground the request using local retrieval if available
+        try:
+            from ..retrieval.retriever import Retriever
+            retr = Retriever()
+            hits = retr.retrieve(text, k=3)
+        except Exception:
+            hits = []
+
+        # Build grounding snippets for prompt
+        if hits:
+            snippets = []
+            for h in hits:
+                src = h.get("source") or "unknown"
+                snip = (h.get("text") or "").strip().replace("\n", " ")
+                snippets.append(f"- Source: {src}\n  Snippet: {snip[:600]}")
+            grounding = "\n\nRetrieved similar examples:\n" + "\n\n".join(snippets)
+        else:
+            grounding = ""
+
+        prompt_with_grounding = user_prompt + "\n\n" + grounding
+
         client = Groq(api_key=api_key)
         response = client.chat.completions.create(
             model="openai/gpt-oss-20b",
             messages=[
                 {"role": "system", "content": _SYSTEM_PROMPT},
-                {"role": "user", "content": user_prompt}
+                {"role": "user", "content": prompt_with_grounding}
             ]
         )
         content = response.choices[0].message.content.strip()
@@ -102,6 +131,13 @@ Extract and return the JSON fields."""
             result = json_repair.loads(content.strip())
         except ImportError:
             result = json.loads(content.strip())
+
+        # Attach retrieval citations for traceability (non-breaking: extra field)
+        if hits:
+            result["_citations"] = [
+                {"source": h.get("source"), "score": h.get("score") if h.get("score") is not None else None, "snippet": (h.get("text") or '')[:600]} 
+                for h in hits
+            ]
 
         return result
 

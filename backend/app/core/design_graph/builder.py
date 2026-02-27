@@ -32,23 +32,56 @@ class DesignGraphBuilder:
 
         for subsystem in all_subsystems:
             reqs = subsystem_requirements.get(subsystem, [])
-            components = arch.get(subsystem, [])
-            
-            # Injection logic for safety
-            if "Control" in subsystem or "Safety" in subsystem:
+            components = arch.get(subsystem, []) or []
+
+            # Injection logic for safety (case-insensitive, robust to empty lists)
+            if any(k in (subsystem or "").lower() for k in ("control", "safety")):
                 if components and isinstance(components[0], dict):
-                    existing = {c["name"] for c in components}
+                    existing = {c.get("name") for c in components}
                     for sc in safety_components:
                         if sc not in existing:
                             components.append({"name": sc, "category": "Hardware (Electronic)"})
                 else:
-                    components = list(set(components + safety_components))
-            
-            # Filter details
-            if components and isinstance(components[0], dict):
-                subsystem_details = {c["name"]: all_details.get(c["name"], {}) for c in components}
-            else:
-                subsystem_details = {c: all_details.get(c, {}) for c in components}
+                    # components may be a list of strings; preserve order and uniqueness
+                    combined = list(components) + list(safety_components)
+                    components = list(dict.fromkeys(combined))
+
+            # Deterministic synthesis: add components driven by requirements
+            synthesized = []
+            for r in reqs:
+                # Performance requirements -> sensor / measurement component
+                if r.type == "performance" and r.parameter:
+                    sensor_name = f"{r.parameter} Sensor"
+                    synthesized.append({"name": sensor_name, "category": "Hardware (Sensor)"})
+
+                # Functional requirements that imply control -> control loop + software
+                if r.type == "functional":
+                    desc = (r.description or "") + " " + (r.fr_text or "")
+                    if any(k in desc.lower() for k in ("control", "maintain", "regulat", "stabiliz")):
+                        synthesized.append({"name": "Control Loop", "category": "Application Software"})
+                        synthesized.append({"name": "Control Algorithm", "category": "Embedded Software"})
+
+                # Interface requirements may imply protocol handlers
+                if r.type == "interface" and r.protocol:
+                    handler = f"{r.protocol} Interface"
+                    synthesized.append({"name": handler, "category": "Hardware/Software Interface"})
+
+            # Merge synthesized components into components list, preserving order and uniqueness
+            final_components = []
+            # normalize existing components to dict form
+            for c in components:
+                if isinstance(c, dict):
+                    final_components.append(c)
+                else:
+                    final_components.append({"name": str(c), "category": "Unknown"})
+            for s in synthesized:
+                if s.get("name") not in {c.get("name") for c in final_components}:
+                    final_components.append(s)
+
+            components = final_components
+
+            # Filter details: support dict-lists (now all dicts)
+            subsystem_details = {c.get("name"): all_details.get(c.get("name"), {}) for c in components}
             
             # Map software
             subsystem_software = [s for s in software_stack if subsystem.lower() in s.get("name", "").lower() or subsystem.lower() in s.get("layer", "").lower()]

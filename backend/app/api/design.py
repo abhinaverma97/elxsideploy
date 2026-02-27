@@ -72,11 +72,53 @@ def generate_design_details(device_type: str = "ventilator"):
 
     reqs_text = "\n".join([req_context(r) for r in reqs])
     
+    # Ground design generation with RAG knowledge base (ISO standards, FDA guidance, etc.)
+    rag_context = ""
+    try:
+        from ..core.retrieval.retriever import Retriever
+        retr = Retriever()
+        # Query for device-specific design guidance
+        query = f"{device_type} medical device design safety electrical usability requirements"
+        hits = retr.retrieve(query, k=5)  # Get top 5 most relevant sources
+        
+        if hits:
+            snippets = []
+            for h in hits:
+                src = h.get("source", "unknown")
+                src_type = h.get("source_type", "code")
+                auth_level = h.get("authority_level", 1)
+                score = h.get("score", 0)
+                text = (h.get("text") or "").strip()[:800]
+                
+                # Format source type for display
+                src_display = {
+                    "iso_60601": "ISO/IEC 60601-1 (Electrical Safety)",
+                    "iso_62366": "ISO 62366-2 (Usability Engineering)",
+                    "iso_14971": "ISO 14971 (Risk Management)",
+                    "fda_classification": "FDA Device Classification",
+                    "fda_510k": "FDA 510(k) Summary",
+                    "medical_literature": "Medical Literature",
+                    "code": "Code Reference"
+                }.get(src_type, src_type)
+                
+                snippets.append(
+                    f"[{src_display} | Authority Level: {auth_level} | Relevance: {score:.3f}]\n"
+                    f"Source: {src}\n"
+                    f"Content: {text}\n"
+                )
+            
+            rag_context = "\n\n=== REGULATORY & SAFETY GUIDANCE (from knowledge base) ===\n" + "\n".join(snippets) + "\n=== END GUIDANCE ===\n"
+    except Exception as e:
+        # Non-blocking: if RAG fails, still generate design without it
+        print(f"RAG retrieval failed (non-blocking): {e}")
+    
     prompt = f"""
     You are an expert Systems Engineer designing a Class II/III Medical Device: {device_type.upper()}.
     
     Here are the system requirements:
     {reqs_text}
+    
+    {rag_context}
     
     Generate a comprehensive, highly technical system design specification in STRICT JSON format. 
     DO NOT wrap the response in markdown blocks like ```json. Return ONLY valid JSON.
@@ -143,10 +185,19 @@ def generate_design_details(device_type: str = "ventilator"):
     }}
     """
     
+    # Load .env (if present) so running uvicorn locally picks up keys.
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except Exception:
+        pass
+
     api_key = os.environ.get("GROQ_API_KEY", "")
+    # Support alternate env name used by requirement analyzer
+    if not api_key:
+        api_key = os.environ.get("GROQ_API_KEY_REQ", "")
     if not api_key:
         return {"error": "GROQ_API_KEY environment variable is not set."}
-        
     try:
         client = Groq(api_key=api_key)
         response = client.chat.completions.create(

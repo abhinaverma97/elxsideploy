@@ -89,8 +89,11 @@ class DialysisTwin(BaseDigitalTwin):
         # State outputs matching Dashboard expectations
         return {
             "BFR": round(bfr, 1),
+            "BloodFlowRate(mL/min)": round(bfr, 1),
             "DFR": round(dfr, 1),
+            "DialysateFlowRate(mL/min)": round(dfr, 1),
             "TMP": round(tmp, 1),
+            "TMP(mmHg)": round(tmp, 1),
             "Pump_PWM": pump_pwm,
             "TMP_mV": tmp_sensor_mv,
             "VenousClamp": venous_clamp,
