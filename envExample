@@ -1,4 +1,5 @@
 GROQ_API_KEY=your_groq_api_key_here
 GROQ_API_KEY_REQ=your_second_groq_api_key_here
+DATABASE_URL=
 
 #rename this file to .env
