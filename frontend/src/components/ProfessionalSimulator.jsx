@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     Play, Pause, RotateCcw, Activity, Zap, AlertTriangle,
     Save, Cpu, ShieldCheck, Database, FastForward, Clock,
-    Sliders, Bell, CheckCircle2, ChevronDown, ChevronRight,
+    Sliders, Bell, CheckCircle2, ChevronDown, ChevronRight, ChevronLeft,
     ExternalLink, Info, BookOpen, SkipForward
 } from 'lucide-react';
 import {
@@ -32,77 +32,68 @@ const STATUS_COLORS = {
 
 function TopBar({ simState, time, speed, setSpeed, fidelity, setFidelity, onRun, onStep, onReset, deviceConfig }) {
     return (
-        <div className="h-14 bg-[#0a1520] border-b border-white/5 flex items-center justify-between px-4 shrink-0">
+        <div className="h-14 bg-[#212121] border-b border-white/10 flex items-center justify-between px-4 shrink-0">
             {/* Left: identity */}
             <div className="flex items-center gap-3 min-w-0">
                 <div className="flex flex-col leading-none min-w-0">
-                    <span className="text-[14px] font-bold text-white truncate">{deviceConfig.label}</span>
-                    <span className="text-[11px] text-white/40 uppercase tracking-widest font-semibold">{deviceConfig.classLabel} · Digital Twin</span>
-                </div>
-                <div className="h-6 w-px bg-white/5" />
-                {/* Design binding */}
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-sky-500/5 border border-sky-500/15 cursor-pointer hover:border-sky-500/40 transition-colors" title="This simulator is automatically derived from the system design graph — no manual wiring">
-                    <Database className="h-3.5 w-3.5 text-sky-400 shrink-0" />
-                    <span className="text-[10px] font-bold text-sky-400/80 whitespace-nowrap">
-                        Design Graph v{deviceConfig.designVersion}
-                    </span>
-                    <ExternalLink className="h-3 w-3 text-sky-400/40" />
+                    <span className="text-[14px] font-bold text-[#ececec] truncate">{deviceConfig.label}</span>
+                    <span className="text-[11px] text-[#878787] uppercase tracking-widest font-semibold">{deviceConfig.classLabel} · Digital Twin</span>
                 </div>
             </div>
 
             {/* Center: Time controls */}
             <div className="flex items-center gap-2">
                 <Button onClick={onRun} size="sm" className={cn('h-8 px-4 gap-1.5 text-[10px] font-bold uppercase tracking-wider',
-                    simState === 'RUNNING' ? 'bg-amber-500 hover:bg-amber-600 text-black' : 'bg-sky-500 hover:bg-sky-600 text-white')}>
+                    simState === 'RUNNING' ? 'bg-amber-500 hover:bg-amber-600 text-black' : 'bg-white hover:bg-white/90 text-black')}>
                     {simState === 'RUNNING' ? <Pause className="h-3 w-3 fill-current" /> : <Play className="h-3 w-3 fill-current" />}
                     {simState === 'RUNNING' ? 'Pause' : 'Run'}
                 </Button>
                 <button onClick={onStep} title="Single step (Δt = 0.1s)"
-                    className="h-8 w-8 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors">
+                    className="h-8 w-8 flex items-center justify-center rounded bg-[#171717] hover:bg-[#2f2f2f] text-[#878787] hover:text-white transition-colors">
                     <SkipForward className="h-3.5 w-3.5" />
                 </button>
                 <button onClick={onReset} title="Reset simulation"
-                    className="h-8 w-8 flex items-center justify-center rounded bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors">
+                    className="h-8 w-8 flex items-center justify-center rounded bg-[#171717] hover:bg-[#2f2f2f] text-[#878787] hover:text-white transition-colors">
                     <RotateCcw className="h-3.5 w-3.5" />
                 </button>
 
                 {/* Speed */}
-                <div className="flex gap-px bg-white/5 rounded border border-white/5 overflow-hidden ml-1">
+                <div className="flex gap-px bg-[#171717] rounded border border-white/10 overflow-hidden ml-1">
                     {['1×', '2×', '10×'].map((s) => (
                         <button key={s} onClick={() => setSpeed(s)}
-                            className={cn('px-2.5 py-1 text-[9px] font-bold transition-colors', speed === s ? 'bg-sky-500/20 text-sky-300' : 'text-white/30 hover:text-white')}>
+                            className={cn('px-2.5 py-1 text-[9px] font-bold transition-colors', speed === s ? 'bg-[#2f2f2f] text-white' : 'text-[#878787] hover:text-white')}>
                             {s}
                         </button>
                     ))}
                 </div>
 
                 {/* Clock */}
-                <div className="flex items-center gap-1.5 ml-2 px-3 py-1 rounded bg-black/30 border border-white/5">
-                    <Clock className="h-3 w-3 text-sky-400/60 shrink-0" />
-                    <span className="font-mono text-sm font-bold tracking-tighter text-white">T={time.toFixed(1)}s</span>
+                <div className="flex items-center gap-1.5 ml-2 px-3 py-1 rounded bg-[#171717] border border-white/10">
+                    <Clock className="h-3 w-3 text-[#38BDF8]/60 shrink-0" />
+                    <span className="font-mono text-sm font-bold tracking-tighter text-[#ececec]">T={time.toFixed(1)}s</span>
                 </div>
 
                 {/* Status pill */}
                 <div className="flex items-center gap-1.5">
-                    <div className={cn('h-2 w-2 rounded-full', simState === 'RUNNING' ? 'bg-sky-400 animate-pulse shadow-[0_0_6px_#38bdf8]' : simState === 'PAUSED' ? 'bg-amber-400' : 'bg-white/20')} />
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-white/40">{simState}</span>
+                    <div className={cn('h-2 w-2 rounded-full', simState === 'RUNNING' ? 'bg-[#38BDF8] animate-pulse shadow-[0_0_6px_#38bdf8]' : simState === 'PAUSED' ? 'bg-amber-400' : 'bg-white/20')} />
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-[#878787]">{simState}</span>
                 </div>
             </div>
 
             {/* Right: Fidelity */}
             <div className="flex items-center gap-2">
-                <div className="flex p-0.5 bg-white/5 rounded-lg border border-white/5 gap-px" title={FIDELITY_DESCRIPTIONS[fidelity]}>
+                <div className="flex p-0.5 bg-[#171717] rounded-lg border border-white/10 gap-px" title={FIDELITY_DESCRIPTIONS[fidelity]}>
                     {['L1', 'L2', 'L3'].map((l) => (
                         <button key={l} onClick={() => setFidelity(l)} className={cn('h-7 px-3 rounded text-[10px] font-bold transition-all',
-                            fidelity === l ? 'bg-sky-500 text-white shadow-lg' : 'text-white/30 hover:text-white')}>
+                            fidelity === l ? 'bg-white text-black shadow-lg' : 'text-[#878787] hover:text-white')}>
                             {l}
                         </button>
                     ))}
                 </div>
                 {fidelity && (
                     <div className="group relative">
-                        <Info className="h-3.5 w-3.5 text-white/20 hover:text-white/50 cursor-help transition-colors" />
-                        <div className="absolute right-0 top-5 hidden group-hover:block w-52 p-2 bg-[#0e1c28] border border-white/10 rounded-lg text-[9px] text-white/60 z-50">
+                        <Info className="h-3.5 w-3.5 text-[#878787] hover:text-white/50 cursor-help transition-colors" />
+                        <div className="absolute right-0 top-5 hidden group-hover:block w-52 p-2 bg-[#171717] border border-white/10 rounded-lg text-[9px] text-[#878787] z-50">
                             {FIDELITY_DESCRIPTIONS[fidelity]}
                         </div>
                     </div>
@@ -115,15 +106,31 @@ function TopBar({ simState, time, speed, setSpeed, fidelity, setFidelity, onRun,
 
 // ─── Left: Components Panel ───────────────────────────────────────────────────
 
-function ComponentsPanel({ modes, setMode, deviceConfig, fidelity }) {
+function ComponentsPanel({ modes, setMode, deviceConfig, fidelity, panelCollapsed, onTogglePanel }) {
     const [collapsed, setCollapsed] = useState({});
     const toggleCollapse = (id) => setCollapsed(p => ({ ...p, [id]: !p[id] }));
 
+    if (panelCollapsed) {
+        return (
+            <div className="w-[40px] bg-[#171717] border-r border-white/10 flex flex-col items-center shrink-0 py-2 gap-2">
+                <button onClick={onTogglePanel} className="p-1.5 rounded hover:bg-[#2f2f2f] text-[#878787] hover:text-white transition-colors" title="Expand inventory">
+                    <ChevronRight className="h-4 w-4" />
+                </button>
+                <Cpu className="h-3.5 w-3.5 text-[#878787] mt-1" />
+            </div>
+        );
+    }
+
     return (
-        <div className="w-[228px] bg-[#0e1c28] border-r border-white/5 flex flex-col shrink-0 overflow-hidden">
-            <div className="px-4 py-2.5 flex items-center gap-2 border-b border-white/5 shrink-0 bg-[#0a1520]/50">
-                <Cpu className="h-4 w-4 text-sky-400" />
-                <span className="text-[11px] font-bold uppercase tracking-widest text-white/60">Inventory</span>
+        <div className="w-[228px] bg-[#171717] border-r border-white/10 flex flex-col shrink-0 overflow-hidden transition-all duration-200">
+            <div className="px-4 py-2.5 flex items-center justify-between border-b border-white/10 shrink-0 bg-[#212121]/50">
+                <div className="flex items-center gap-2">
+                    <Cpu className="h-4 w-4 text-[#38BDF8]" />
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-[#878787]">Inventory</span>
+                </div>
+                <button onClick={onTogglePanel} className="p-1 rounded hover:bg-[#2f2f2f] text-[#878787] hover:text-white transition-colors" title="Collapse">
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                </button>
             </div>
 
             <div className="flex-1 overflow-y-auto py-0" style={{ scrollbarWidth: 'none' }}>
@@ -133,18 +140,18 @@ function ComponentsPanel({ modes, setMode, deviceConfig, fidelity }) {
                         <div key={sub.id} className="px-2 mb-0.5">
                             <button onClick={() => toggleCollapse(sub.id)}
                                 className="w-full flex items-center gap-1.5 py-1 text-left group">
-                                {isCollapsed ? <ChevronRight className="h-3 w-3 text-white/20 group-hover:text-white/50" /> : <ChevronDown className="h-3 w-3 text-white/20 group-hover:text-white/50" />}
-                                <span className="text-xs font-bold uppercase tracking-wider text-white/50 group-hover:text-white/70">{sub.label}</span>
+                                {isCollapsed ? <ChevronRight className="h-3 w-3 text-[#878787] group-hover:text-white/50" /> : <ChevronDown className="h-3 w-3 text-[#878787] group-hover:text-white/50" />}
+                                <span className="text-xs font-bold uppercase tracking-wider text-[#878787] group-hover:text-[#ececec]">{sub.label}</span>
                             </button>
 
                             {!isCollapsed && sub.components.map((comp) => {
                                 const mode = modes[comp] || 'Ideal';
                                 const colors = STATUS_COLORS[mode];
                                 return (
-                                    <div key={comp} className="mb-0.5 bg-black/40 border rounded-lg px-2.5 py-1.5 transition-all"
+                                    <div key={comp} className="mb-0.5 bg-[#212121] border rounded-lg px-2.5 py-1.5 transition-all"
                                         style={{ borderColor: colors.border }}>
                                         <div className="flex items-center justify-between mb-1">
-                                            <span className="text-xs font-bold text-white/80 leading-tight truncate pr-1" title={comp}>{comp}</span>
+                                            <span className="text-xs font-bold text-[#ececec] leading-tight truncate pr-1" title={comp}>{comp}</span>
                                             <span className={cn('text-[10px] font-bold italic opacity-70', colors.badge)}>{mode}</span>
                                         </div>
                                         <div className="grid grid-cols-3 gap-1">
@@ -154,8 +161,8 @@ function ComponentsPanel({ modes, setMode, deviceConfig, fidelity }) {
                                                         mode === m
                                                             ? m === 'Failed' ? 'bg-red-500 text-white border-transparent'
                                                                 : m === 'Noisy' ? 'bg-amber-500 text-black border-transparent'
-                                                                    : 'bg-sky-500 text-white border-transparent'
-                                                            : 'bg-black/60 text-white/30 border-white/10 hover:border-white/30 hover:text-white/80'
+                                                                    : 'bg-white text-black border-transparent'
+                                                            : 'bg-[#171717] text-[#878787] border-white/10 hover:border-white/30 hover:text-[#ececec]'
                                                     )}>
                                                     {m[0]}
                                                 </button>
@@ -187,26 +194,7 @@ function ArchitectureView({ deviceConfig, simState, modes }) {
     };
 
     return (
-        <div className="flex-1 flex flex-col min-h-0 border-b border-white/5 bg-[#070f17]">
-            <div className="flex items-center justify-between px-4 py-2 shrink-0 border-b border-white/5">
-                <div className="flex items-center gap-2 text-white/30">
-                    <Database className="h-3 w-3 text-sky-400/60" />
-                    <span className="text-[9px] font-bold uppercase tracking-widest">System Architecture — Auto-generated</span>
-                </div>
-                <div className="flex items-center gap-3">
-                    <span className="text-[8px] text-white/15 font-mono border border-white/5 rounded px-2 py-0.5 bg-black/20 flex items-center gap-1">
-                        Source: Design Graph v{deviceConfig.designVersion} <ExternalLink className="h-2 w-2 inline" />
-                    </span>
-                    <div className="flex items-center gap-1.5">
-                        {['Normal', 'Noisy', 'Fault'].map((lbl, i) => (
-                            <div key={lbl} className="flex items-center gap-1">
-                                <div className={cn('h-1.5 w-1.5 rounded-full', i === 0 ? 'bg-sky-400' : i === 1 ? 'bg-amber-400' : 'bg-red-500')} />
-                                <span className="text-[8px] text-white/25 uppercase font-bold">{lbl}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
+        <div className="flex-1 flex flex-col min-h-0 border-b border-white/10 bg-[#212121]">
 
             <div className="flex-1 relative overflow-hidden">
                 <svg viewBox="0 0 800 370" className="w-full h-full">
@@ -240,7 +228,7 @@ function ArchitectureView({ deviceConfig, simState, modes }) {
                         const col = STATUS_COLORS[mode];
                         return (
                             <g key={sub.id} transform={`translate(${sub.x},${sub.y})`}>
-                                <rect width={sub.w} height={sub.h} rx="6" fill="#0e1c28"
+                                <rect width={sub.w} height={sub.h} rx="6" fill="#171717"
                                     stroke={col.border} strokeWidth={mode !== 'Ideal' ? 1.5 : 1}
                                     filter={mode === 'Failed' ? 'url(#glow)' : undefined} />
                                 {/* Status LED */}
@@ -285,22 +273,22 @@ function TelemetryPanel({ simData, deviceConfig, fidelity, frozen, setFrozen, on
     const chartData = (frozen ? simData.frozen : simData.live) || [];
 
     return (
-        <div className="h-52 shrink-0 border-t border-white/5 flex flex-col bg-[#070f17]">
-            <div className="flex items-center justify-between px-4 py-1.5 shrink-0 border-b border-white/5">
+        <div className="h-72 shrink-0 border-t border-white/10 flex flex-col bg-[#212121]">
+            <div className="flex items-center justify-between px-4 py-1.5 shrink-0 border-b border-white/10">
                 <div className="flex items-center gap-2">
-                    <Activity className="h-3 w-3 text-sky-400/60" />
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-white/30">Signal Telemetry</span>
-                    {!frozen && chartData.length > 0 && <div className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-pulse" />}
+                    <Activity className="h-3 w-3 text-[#38BDF8]/60" />
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-[#878787]">Signal Telemetry</span>
+                    {!frozen && chartData.length > 0 && <div className="h-1.5 w-1.5 rounded-full bg-[#38BDF8] animate-pulse" />}
                     {frozen && <span className="text-[8px] text-amber-400 font-bold uppercase tracking-wider ml-1">FROZEN</span>}
                 </div>
                 <div className="flex gap-2">
                     <button onClick={() => setFrozen(f => !f)}
                         className={cn('h-7 px-3 rounded text-[9px] font-bold border uppercase tracking-wider transition-all gap-1.5 flex items-center',
-                            frozen ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' : 'bg-black/30 border-white/5 text-white/40 hover:text-white')}>
+                            frozen ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' : 'bg-[#171717] border-white/10 text-[#878787] hover:text-white')}>
                         <Pause className="h-2.5 w-2.5" />{frozen ? 'Resume' : 'Freeze'}
                     </button>
                     <button onClick={onSnap}
-                        className="h-7 px-3 rounded text-[9px] font-bold border uppercase tracking-wider bg-black/30 border-white/5 text-white/40 hover:text-white transition-all flex items-center gap-1.5">
+                        className="h-7 px-3 rounded text-[9px] font-bold border uppercase tracking-wider bg-[#171717] border-white/10 text-[#878787] hover:text-white transition-all flex items-center gap-1.5">
                         <Save className="h-2.5 w-2.5" />Snap
                     </button>
                 </div>
@@ -314,10 +302,10 @@ function TelemetryPanel({ simData, deviceConfig, fidelity, frozen, setFrozen, on
                     </div>
                 ) : (
                     signals.map((sig) => (
-                        <div key={sig.key} className="flex-1 flex flex-col min-w-0 border-r border-white/5 last:border-r-0 px-1 py-1">
+                        <div key={sig.key} className="flex-1 flex flex-col min-w-0 border-r border-white/10 last:border-r-0 px-1 py-1">
                             <div className="flex justify-between px-2 mb-0.5">
                                 <span className="text-[8px] font-bold uppercase tracking-tighter" style={{ color: sig.color }}>{sig.label}</span>
-                                <span className="text-[8px] text-white/25 font-mono">{sig.unit}</span>
+                                <span className="text-[8px] text-[#878787] font-mono">{sig.unit}</span>
                             </div>
                             <div className="flex-1 min-h-0">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -331,7 +319,7 @@ function TelemetryPanel({ simData, deviceConfig, fidelity, frozen, setFrozen, on
                                         <CartesianGrid strokeDasharray="2 4" stroke="rgba(255,255,255,0.04)" vertical={false} />
                                         <YAxis domain={sig.domain} fontSize={7} stroke="rgba(255,255,255,0.1)" tickLine={false} axisLine={false} />
                                         <XAxis dataKey="t" hide />
-                                        <Tooltip contentStyle={{ backgroundColor: '#0e1c28', border: '1px solid rgba(255,255,255,0.08)', fontSize: 9 }} cursor={{ stroke: 'rgba(255,255,255,0.1)' }} />
+                                        <Tooltip contentStyle={{ backgroundColor: '#171717', border: '1px solid rgba(255,255,255,0.08)', fontSize: 9 }} cursor={{ stroke: 'rgba(255,255,255,0.1)' }} />
                                         <Area type="monotone" dataKey={sig.key} stroke={sig.color} strokeWidth={1.5} fill={`url(#g${sig.key})`} isAnimationActive={false} dot={false} />
                                     </AreaChart>
                                 </ResponsiveContainer>
@@ -350,46 +338,46 @@ function AnalysisPanel({ deviceConfig, fidelity, onInjectFault, safetyLog, scena
     const faultsEnabled = FIDELITY_FAULT_LOCK[fidelity];
 
     return (
-        <div className="w-[268px] bg-[#0e1c28] border-l border-white/5 flex flex-col shrink-0 overflow-y-auto"
-            style={{ scrollbarWidth: 'thin', scrollbarColor: '#1e3245 transparent' }}>
+        <div className="w-[320px] bg-[#171717] border-l border-white/10 flex flex-col shrink-0 overflow-y-auto"
+            style={{ scrollbarWidth: 'thin', scrollbarColor: '#2f2f2f transparent' }}>
 
             {/* Fidelity summary */}
-            <div className="px-5 pt-4 pb-3 border-b border-white/5 shrink-0">
+            <div className="px-5 pt-4 pb-3 border-b border-white/10 shrink-0">
                 <div className="flex items-center gap-2 mb-1.5">
-                    <Sliders className="h-4 w-4 text-sky-400" />
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-white/60">What-if Analysis</span>
+                    <Sliders className="h-4 w-4 text-[#38BDF8]" />
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-[#878787]">What-if Analysis</span>
                 </div>
-                <p className="text-[10px] text-white/30 leading-relaxed font-medium">{FIDELITY_DESCRIPTIONS[fidelity]}</p>
+                <p className="text-[10px] text-[#878787] leading-relaxed font-medium">{FIDELITY_DESCRIPTIONS[fidelity]}</p>
             </div>
 
             {/* Scenario Manager */}
-            <section className="px-5 pt-4 pb-4 border-b border-white/5">
+            <section className="px-5 pt-4 pb-4 border-b border-white/10">
                 <div className="flex items-center gap-2 mb-2.5">
-                    <BookOpen className="h-3.5 w-3.5 text-white/30" />
-                    <span className="text-[10px] font-bold uppercase tracking-tight text-white/40">Scenarios</span>
+                    <BookOpen className="h-3.5 w-3.5 text-[#878787]" />
+                    <span className="text-[10px] font-bold uppercase tracking-tight text-[#878787]">Scenarios</span>
                 </div>
                 <div className="space-y-2">
                     {scenarios.map((s) => (
                         <button key={s.name} onClick={() => { setActiveScenario(s.name); onLoadScenario(s.params); }}
                             className={cn('w-full text-left px-3 py-2.5 rounded-xl text-[11px] font-bold border transition-all',
-                                activeScenario === s.name ? 'bg-sky-500/15 border-sky-500/30 text-sky-300' : 'bg-black/20 border-white/5 text-white/50 hover:border-white/20 hover:text-white/80')}>
+                                activeScenario === s.name ? 'bg-[#2f2f2f] border-white/20 text-white' : 'bg-[#212121] border-white/10 text-[#878787] hover:border-white/20 hover:text-[#ececec]')}>
                             {s.name}
                         </button>
                     ))}
                     <button onClick={onResetBaseline}
-                        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-[10px] font-bold border bg-black/20 border-white/5 text-white/30 hover:text-white/60 transition-all">
+                        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-[10px] font-bold border bg-[#212121] border-white/10 text-[#878787] hover:text-[#ececec] transition-all">
                         <RotateCcw className="h-3 w-3" />Reset to Baseline
                     </button>
                 </div>
             </section>
 
             {/* Fault Injection Matrix */}
-            <section className="px-5 pt-4 pb-4 border-b border-white/5">
+            <section className="px-5 pt-4 pb-4 border-b border-white/10">
                 <div className="flex items-center gap-2 mb-3">
                     <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
                     <span className="text-[10px] font-bold uppercase tracking-tight text-amber-500/80">Fault Injection</span>
                     {!faultsEnabled && (
-                        <span className="ml-auto text-[8px] text-white/20 italic">Requires L3</span>
+                        <span className="ml-auto text-[8px] text-[#878787] italic">Requires L3</span>
                     )}
                 </div>
                 <div className="grid grid-cols-1 gap-2">
@@ -397,9 +385,9 @@ function AnalysisPanel({ deviceConfig, fidelity, onInjectFault, safetyLog, scena
                         <button key={label} disabled={!faultsEnabled}
                             onClick={() => onInjectFault(param, bias)}
                             className={cn('flex items-center gap-2.5 px-3.5 py-3 rounded-xl border text-left transition-all',
-                                !faultsEnabled ? 'opacity-30 cursor-not-allowed bg-black/20 border-white/5 text-white/30'
-                                    : color === 'red' ? 'bg-red-500/5 border-red-500/15 hover:border-red-500/40 hover:bg-red-500/10 text-white/70'
-                                        : 'bg-amber-500/5 border-amber-500/15 hover:border-amber-500/35 hover:bg-amber-500/10 text-white/70')}>
+                                !faultsEnabled ? 'opacity-30 cursor-not-allowed bg-[#212121] border-white/10 text-[#878787]'
+                                    : color === 'red' ? 'bg-red-500/5 border-red-500/15 hover:border-red-500/40 hover:bg-red-500/10 text-[#ececec]'
+                                        : 'bg-amber-500/5 border-amber-500/15 hover:border-amber-500/35 hover:bg-amber-500/10 text-[#ececec]')}>
                             <div className={cn('h-2 w-2 rounded-full shrink-0', color === 'red' ? 'bg-red-500' : 'bg-amber-400')} />
                             <span className="text-[11px] font-bold leading-tight">{label}</span>
                         </button>
@@ -410,8 +398,8 @@ function AnalysisPanel({ deviceConfig, fidelity, onInjectFault, safetyLog, scena
             {/* Safety Event Log */}
             <section className="px-5 pt-4 pb-5 flex-1">
                 <div className="flex items-center gap-2 mb-3">
-                    <Bell className="h-3.5 w-3.5 text-white/30" />
-                    <span className="text-[10px] font-bold uppercase tracking-tight text-white/40">Safety Event Log</span>
+                    <Bell className="h-3.5 w-3.5 text-[#878787]" />
+                    <span className="text-[10px] font-bold uppercase tracking-tight text-[#878787]">Safety Event Log</span>
                     {safetyLog.length > 0 && (
                         <span className="ml-auto h-5 w-5 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center shadow-lg shadow-red-500/20">{safetyLog.length}</span>
                     )}
@@ -420,27 +408,27 @@ function AnalysisPanel({ deviceConfig, fidelity, onInjectFault, safetyLog, scena
                 {/* Safety rules reference */}
                 <div className="mb-3 space-y-2">
                     {deviceConfig.safetyRules.map((rule, i) => (
-                        <div key={i} className="px-3 py-2 bg-black/20 border border-white/5 rounded-xl">
+                        <div key={i} className="px-3 py-2 bg-[#212121] border border-white/10 rounded-xl">
                             <div className="flex items-center gap-1.5 mb-1">
-                                <ShieldCheck className="h-3 w-3 text-sky-400/60 shrink-0" />
-                                <span className="text-[10px] font-bold text-white/60">{rule.rule}</span>
+                                <ShieldCheck className="h-3 w-3 text-[#38BDF8]/60 shrink-0" />
+                                <span className="text-[10px] font-bold text-[#ececec]">{rule.rule}</span>
                             </div>
-                            <span className="text-[9px] text-white/35 font-mono block">{rule.param} {rule.threshold}</span>
-                            <span className="text-[9px] text-sky-400/50 font-mono block italic">{rule.iso}</span>
+                            <span className="text-[9px] text-[#878787] font-mono block">{rule.param} {rule.threshold}</span>
+                            <span className="text-[9px] text-[#38BDF8]/50 font-mono block italic">{rule.iso}</span>
                         </div>
                     ))}
                 </div>
 
                 {/* Active events */}
-                <div className="min-h-[80px] bg-black/30 border border-white/5 rounded-xl p-3 space-y-2">
+                <div className="min-h-[80px] bg-[#212121] border border-white/10 rounded-xl p-3 space-y-2">
                     {safetyLog.length === 0 ? (
                         <div className="flex items-center justify-center h-12">
-                            <span className="text-[10px] text-white/15 italic uppercase tracking-widest font-bold">No active events</span>
+                            <span className="text-[10px] text-[#878787] italic uppercase tracking-widest font-bold">No active events</span>
                         </div>
                     ) : safetyLog.map((evt, i) => (
-                        <div key={i} className="flex items-start gap-2 pb-2 border-b border-white/5 last:border-0 last:pb-0">
+                        <div key={i} className="flex items-start gap-2 pb-2 border-b border-white/10 last:border-0 last:pb-0">
                             <AlertTriangle className="h-3 w-3 text-red-400 shrink-0 mt-0.5" />
-                            <span className="text-[10px] text-white/60 leading-normal">{evt}</span>
+                            <span className="text-[10px] text-[#ececec] leading-normal">{evt}</span>
                         </div>
                     ))}
                 </div>
@@ -467,6 +455,7 @@ export default function ProfessionalSimulator({ deviceType }) {
     const [activeScenario, setActiveScenario] = useState('Baseline');
     const [loading, setLoading] = useState(false);
     const [activeLayer, setActiveLayer] = useState('system'); // 'system' | 'hardware'
+    const [panelCollapsed, setPanelCollapsed] = useState(false);
     const animRef = useRef(null);
 
     // speed multiplier
@@ -551,7 +540,7 @@ export default function ProfessionalSimulator({ deviceType }) {
     const time = animIdx * 0.1;
 
     return (
-        <div className="w-full h-full flex flex-col font-sans text-white overflow-hidden bg-[#070f17]">
+        <div className="w-full h-full flex flex-col font-sans text-white overflow-hidden bg-[#212121]">
             <TopBar
                 simState={simState} time={time} speed={speed} setSpeed={setSpeed}
                 fidelity={fidelity} setFidelity={setFidelity}
@@ -560,7 +549,7 @@ export default function ProfessionalSimulator({ deviceType }) {
             />
 
             {/* ── Layer Tab Bar ── */}
-            <div className="flex items-center px-5 gap-1 border-b border-white/5 bg-[#0a1520] shrink-0">
+            <div className="flex items-center px-5 gap-1 border-b border-white/10 bg-[#212121] shrink-0">
                 {[['system', 'System Twin'], ['hardware', 'Hardware / Electronics Twin']].map(([key, label]) => (
                     <button
                         key={key}
@@ -568,20 +557,21 @@ export default function ProfessionalSimulator({ deviceType }) {
                         className={cn(
                             'px-5 py-2.5 text-[10px] font-bold uppercase tracking-wider border-b-2 transition-all',
                             activeLayer === key
-                                ? 'border-sky-400 text-sky-300'
-                                : 'border-transparent text-white/30 hover:text-white/60 hover:border-white/20'
+                                ? 'border-[#38BDF8] text-white'
+                                : 'border-transparent text-[#878787] hover:text-[#ececec] hover:border-white/20'
                         )}
                     >
                         {label}
                     </button>
                 ))}
-                <div className="ml-auto text-[8px] text-white/15 font-mono italic pr-2">Both layers derive from Design Graph v{cfg.designVersion}</div>
+                <div className="ml-auto text-[8px] text-[#878787] font-mono italic pr-2">Both layers derive from Design Graph v{cfg.designVersion}</div>
             </div>
 
             {/* ── Layer-1: System Twin ── */}
             {activeLayer === 'system' && (
                 <div className="flex-1 flex overflow-hidden min-h-0">
-                    <ComponentsPanel modes={modes} setMode={handleModeChange} deviceConfig={cfg} fidelity={fidelity} />
+                    <ComponentsPanel modes={modes} setMode={handleModeChange} deviceConfig={cfg} fidelity={fidelity}
+                        panelCollapsed={panelCollapsed} onTogglePanel={() => setPanelCollapsed(p => !p)} />
                     <div className="flex-1 flex flex-col overflow-hidden min-h-0 min-w-0">
                         <ArchitectureView deviceConfig={cfg} simState={simState} modes={modes} />
                         <TelemetryPanel simData={simData} deviceConfig={cfg} fidelity={fidelity}

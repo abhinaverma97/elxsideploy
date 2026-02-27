@@ -7,7 +7,9 @@ import {
   Settings,
   User,
   MoreHorizontal,
-  ClipboardList
+  ClipboardList,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react'
 
 import RequirementsForm from './components/RequirementsForm'
@@ -27,6 +29,7 @@ const DEVICES = [
 export default function App() {
   const [view, setView] = useState('requirements')
   const [deviceType, setDeviceType] = useState('ventilator')
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   const navItems = [
     { id: 'requirements', label: 'Requirements', icon: ClipboardList },
@@ -37,28 +40,39 @@ export default function App() {
 
   return (
     <div className="dark flex h-screen bg-background text-foreground overflow-hidden font-sans">
-      {/* SIDEBAR - ChatGPT Style (#171717 background equivalent) */}
-      <aside className="w-[260px] flex-shrink-0 bg-[#171717] flex flex-col justify-between hidden md:flex h-full">
+      {/* SIDEBAR - ChatGPT Style - Collapsible */}
+      <aside className={cn(
+        "flex-shrink-0 bg-[#171717] flex flex-col justify-between hidden md:flex h-full transition-all duration-200",
+        sidebarCollapsed ? "w-[60px]" : "w-[260px]"
+      )}>
         <div className="flex flex-col h-full p-3 gap-2">
           {/* Top Actions: Logo/Select & New Chat */}
-          <div className="flex items-center justify-between mb-2">
-            {/* ChatGPT style top left dropdown (Simulated as device select for now) */}
-            <div className="flex items-center gap-2 hover:bg-[#2f2f2f] rounded-lg px-2 py-1.5 cursor-pointer transition-colors duration-200">
-              <div className="h-6 w-6 rounded bg-white text-black flex items-center justify-center font-bold text-xs">V</div>
-              <span className="text-sm font-medium text-white">VitaBlueprint</span>
+          <div className={cn("flex items-center mb-2", sidebarCollapsed ? "justify-center" : "justify-between")}>
+            {/* ChatGPT style top left dropdown */}
+            <div className={cn(
+              "flex items-center gap-2 hover:bg-[#2f2f2f] rounded-lg cursor-pointer transition-colors duration-200",
+              sidebarCollapsed ? "px-1.5 py-1.5 justify-center" : "px-2 py-1.5"
+            )} onClick={() => sidebarCollapsed && setSidebarCollapsed(false)}>
+              <div className="h-6 w-6 rounded bg-white text-black flex items-center justify-center font-bold text-xs shrink-0">V</div>
+              {!sidebarCollapsed && <span className="text-sm font-medium text-white">VitaBlueprint</span>}
             </div>
             {/* ChatGPT style New Chat button */}
-            <button onClick={() => setView('requirements')} className="p-1.5 hover:bg-[#2f2f2f] rounded-lg text-[#ececec] transition-colors duration-200">
-              <SquarePen className="w-5 h-5" />
-            </button>
+            {!sidebarCollapsed && (
+              <button onClick={() => setView('requirements')} className="p-1.5 hover:bg-[#2f2f2f] rounded-lg text-[#ececec] transition-colors duration-200">
+                <SquarePen className="w-5 h-5" />
+              </button>
+            )}
           </div>
 
           {/* Navigation/History List */}
           <div className="flex-1 overflow-y-auto">
             {/* "Today" section header equivalent */}
-            <div className="px-2 pb-2 pt-4">
-              <p className="text-xs font-semibold text-[#878787] mb-2">Workspace Views</p>
-            </div>
+            {!sidebarCollapsed && (
+              <div className="px-2 pb-2 pt-4">
+                <p className="text-xs font-semibold text-[#878787] mb-2">Workspace Views</p>
+              </div>
+            )}
+            {sidebarCollapsed && <div className="pt-3" />}
             <nav className="space-y-0.5">
               {navItems.map((item) => {
                 const Icon = item.icon
@@ -67,24 +81,29 @@ export default function App() {
                   <button
                     key={item.id}
                     onClick={() => setView(item.id)}
+                    title={sidebarCollapsed ? item.label : undefined}
                     className={cn(
-                      "w-full flex items-center gap-2.5 px-2 py-2 text-sm rounded-lg transition-colors group",
+                      "w-full flex items-center gap-2.5 text-sm rounded-lg transition-colors group",
+                      sidebarCollapsed ? "justify-center px-0 py-2" : "px-2 py-2",
                       isActive
                         ? "bg-[#2f2f2f] text-white font-medium"
                         : "text-[#ececec] hover:bg-[#2f2f2f] font-normal"
                     )}
                   >
-                    <Icon className="w-4 h-4 opacity-70 group-hover:opacity-100" />
-                    <span className="truncate">{item.label}</span>
+                    <Icon className="w-4 h-4 opacity-70 group-hover:opacity-100 shrink-0" />
+                    {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
                   </button>
                 )
               })}
             </nav>
 
-            {/* Device Selection (Simulating older chat history blocks) */}
-            <div className="px-2 pb-2 pt-6">
-              <p className="text-xs font-semibold text-[#878787] mb-2">Target Device</p>
-            </div>
+            {/* Device Selection */}
+            {!sidebarCollapsed && (
+              <div className="px-2 pb-2 pt-6">
+                <p className="text-xs font-semibold text-[#878787] mb-2">Target Device</p>
+              </div>
+            )}
+            {sidebarCollapsed && <div className="pt-4 border-t border-white/10 mt-3" />}
             <div className="space-y-0.5">
               {DEVICES.map((d) => {
                 const isSelected = deviceType === d.id
@@ -92,17 +111,19 @@ export default function App() {
                   <button
                     key={d.id}
                     onClick={() => setDeviceType(d.id)}
+                    title={sidebarCollapsed ? d.name : undefined}
                     className={cn(
-                      "w-full flex items-center gap-2.5 px-2 py-2 text-sm rounded-lg transition-colors group",
+                      "w-full flex items-center gap-2.5 text-sm rounded-lg transition-colors group",
+                      sidebarCollapsed ? "justify-center px-0 py-2" : "px-2 py-2",
                       isSelected
                         ? "bg-[#2f2f2f] text-white font-medium"
                         : "text-[#ececec] hover:bg-[#2f2f2f] font-normal"
                     )}
                   >
-                    <div className="w-4 h-4 flex items-center justify-center opacity-70 group-hover:opacity-100">
+                    <div className="w-4 h-4 flex items-center justify-center opacity-70 group-hover:opacity-100 shrink-0">
                       <div className={cn("w-2 h-2 rounded-full", isSelected ? "bg-white" : "bg-transparent border border-[#ececec]")}></div>
                     </div>
-                    <span className="truncate">{d.name}</span>
+                    {!sidebarCollapsed && <span className="truncate">{d.name}</span>}
                   </button>
                 )
               })}
@@ -111,16 +132,30 @@ export default function App() {
           </div>
         </div>
 
-        {/* Bottom User Area */}
-        <div className="p-3">
-          <button className="w-full flex items-center justify-between gap-2 px-2 py-3 text-sm font-medium rounded-lg hover:bg-[#2f2f2f] transition-colors text-white">
+        {/* Bottom: Collapse toggle + User Area */}
+        <div className="p-3 space-y-1">
+          <button
+            onClick={() => setSidebarCollapsed(c => !c)}
+            className={cn(
+              "w-full flex items-center gap-2 py-2 text-sm rounded-lg hover:bg-[#2f2f2f] transition-colors text-[#878787] hover:text-white",
+              sidebarCollapsed ? "justify-center px-0" : "px-2"
+            )}
+            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {sidebarCollapsed ? <PanelLeftOpen className="w-4 h-4 shrink-0" /> : <PanelLeftClose className="w-4 h-4 shrink-0" />}
+            {!sidebarCollapsed && <span className="text-xs">Collapse</span>}
+          </button>
+          <button className={cn(
+            "w-full flex items-center gap-2 py-3 text-sm font-medium rounded-lg hover:bg-[#2f2f2f] transition-colors text-white",
+            sidebarCollapsed ? "justify-center px-0" : "justify-between px-2"
+          )}>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-sky-500 to-teal-400 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-sky-500 to-teal-400 flex items-center justify-center shrink-0">
                 <User className="w-4 h-4 text-white" />
               </div>
-              Admin User
+              {!sidebarCollapsed && 'Admin User'}
             </div>
-            <MoreHorizontal className="w-4 h-4 text-[#878787]" />
+            {!sidebarCollapsed && <MoreHorizontal className="w-4 h-4 text-[#878787]" />}
           </button>
         </div>
       </aside>
