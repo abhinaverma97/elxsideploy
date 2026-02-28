@@ -289,6 +289,8 @@ export default function RequirementsForm({ deviceType, setView }) {
 					<Button variant="secondary" size="sm" onClick={() => loadSample()} className="bg-white/10 hover:bg-white/15 text-white">
 						<Sparkles className="mr-2 h-4 w-4" /> Load Sample
 					</Button>
+					{/* Secondary sample buttons hidden per user request */}
+					{/* 
 					{deviceType === 'ventilator' && (
 						<>
 							<Button variant="secondary" size="sm" onClick={() => loadSample('interface')} className="bg-white/10 hover:bg-white/15 text-white">
@@ -312,6 +314,7 @@ export default function RequirementsForm({ deviceType, setView }) {
 							</Button>
 						</>
 					)}
+					*/}
 				</div>
 			</div>
 
