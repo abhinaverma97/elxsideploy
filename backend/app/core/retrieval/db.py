@@ -10,8 +10,10 @@ from sqlalchemy.orm import sessionmaker
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 if not DATABASE_URL:
-    # Fallback to SQLite for local dev if DATABASE_URL not provided
-    DATABASE_URL = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'rag_meta.db')}"
+    # Use the unified RAG database at project root
+    import os
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../'))
+    DATABASE_URL = f"sqlite:///{os.path.join(project_root, 'rag_metadata.db')}"
 
 engine = create_engine(DATABASE_URL, echo=False)
 SessionLocal = sessionmaker(bind=engine)

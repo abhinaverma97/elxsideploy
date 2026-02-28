@@ -33,18 +33,33 @@ env
 # RAG Knowledge Base - exclude data files and caches
 rag_metadata.db
 *.db
+backend/app/core/retrieval/index_store.npz
+backend/app/core/retrieval/index_meta.json
 documents/standards/*.pdf
 documents/fda_cache/
 documents/pubmed_cache/
+documents/component_cache/
+documents/kicad_footprints/
+documents/reference_designs/
 documents/standards/.indexed_versions.json
 
 # Temporary test/debug files
 venv_test.png
-scripts/fix_*.py
-scripts/setup_postgres.py
-scripts/reset_postgres_dev.py
-scripts/get_postgres_url.py
-scripts/set_md5_password.py
-scripts/initdb-rag.sql
-scripts/init_sqlite_and_migrate.py
-scripts/postgres-data/
+test_*.py
+check_*.py
+debug_*.py
+temp_*.py
+populate_*.py
+*.bak
+*.tmp
+*~
+
+# Keep important utilities
+!rebuild_rag_index.py
+
+# Cache and build artifacts
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.log

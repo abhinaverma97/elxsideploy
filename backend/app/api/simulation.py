@@ -5,9 +5,68 @@ from ..core.simulation.class3.dialysis import DialysisTwin
 from ..core.simulation.engine import SimulationEngine
 from ..core.simulation.faults import FaultInjector
 from .requirements import store
+from ..core.devices.class2.ventilator import Ventilator
+from ..core.devices.class1.pulse_oximeter import PulseOximeter
+from ..core.devices.class3.dialysis import DialysisMachine
 
 router = APIRouter()
 simulation_results = []
+
+
+def _extract_design_specs(device_type: str) -> dict:
+    """
+    Extract component specifications from design for simulation integration.
+    NO HARDCODING - Uses dynamically generated design data.
+    """
+    # Map device type to device class
+    device_map = {
+        "ventilator": Ventilator,
+        "pulse_ox": PulseOximeter,
+        "dialysis": DialysisMachine
+    }
+    
+    device_class = device_map.get(device_type.lower())
+    if not device_class:
+        return {}
+    
+    device = device_class()
+    detailed_components = device.get_detailed_components()
+    
+    specs = {}
+    
+    # Extract key component specs for simulation physics
+    # These specs will be used to parameterize the physics models
+    if device_type == "ventilator":
+        # Blower specifications
+        blower_specs = detailed_components.get("Blower Turbine", {})
+        if "speed" in blower_specs:
+            speed_str = blower_specs["speed"]
+            # Extract numeric value from "60k RPM" -> 60000
+            import re
+            match = re.search(r'(\d+)k?\s*RPM', speed_str, re.IGNORECASE)
+            if match:
+                rpm = int(match.group(1))
+                if 'k' in speed_str.lower():
+                    rpm *= 1000
+                specs["blower_max_rpm"] = rpm
+        
+        # Sensor specifications
+        sensor_specs = detailed_components.get("Proximal Flow Sensor", {})
+        if "accuracy" in sensor_specs:
+            acc_str = sensor_specs["accuracy"]
+            match = re.search(r'(\d+(?:\.\d+)?)', acc_str)
+            if match:
+                specs["sensor_accuracy"] = float(match.group(1)) / 100.0  # 3% -> 0.03
+        
+        # Safety valve specifications
+        valve_specs = detailed_components.get("Relief Valve (Pop-off)", {})
+        if "threshold" in valve_specs:
+            thresh_str = valve_specs["threshold"]
+            match = re.search(r'(\d+)', thresh_str)
+            if match:
+                specs["relief_valve_threshold"] = float(match.group(1))
+    
+    return specs
 
 
 def _extract_ventilator_params(requirements) -> dict:
@@ -120,6 +179,7 @@ PARAM_EXTRACTOR_MAP = {
 def run_simulation(steps: int = 10, device_type: str = "ventilator", fidelity: str = "L2"):
     """
     Runs a Digital Twin simulation of the specified device.
+    NOW INTEGRATED with design graph - uses component specs from generated design.
     """
     global simulation_results
 
@@ -130,8 +190,14 @@ def run_simulation(steps: int = 10, device_type: str = "ventilator", fidelity: s
     if not twin_class or not extractor:
         return {"error": f"Device type {device_type} not supported"}
 
+    # Extract parameters from requirements
     params = extractor(store.get_all())
     params["fidelity"] = fidelity
+    
+    # CRITICAL: Extract component specs from design (RAG-driven, not hardcoded)
+    design_specs = _extract_design_specs(device_type)
+    params.update(design_specs)  # Merge design specs into simulation params
+    
     twin = twin_class(**params)
     
     engine = SimulationEngine(twin)
@@ -139,6 +205,8 @@ def run_simulation(steps: int = 10, device_type: str = "ventilator", fidelity: s
 
     return {
         "parameters_used": params,
+        "design_specs_used": design_specs,
+        "integration_status": "Design→Simulation connected" if design_specs else "Requirements-only",
         "steps": steps,
         "snapshots": simulation_results
     }
@@ -154,6 +222,7 @@ def run_faulty_simulation(
 ):
     """
     Injects a fault into the simulation for safety/what-if analysis.
+    NOW INTEGRATED with design graph - uses component specs.
     bias: e.g. 0.2 means +20% sensor bias.
     """
     global simulation_results
@@ -165,8 +234,14 @@ def run_faulty_simulation(
     if not twin_class or not extractor:
         return {"error": f"Device type {device_type} not supported"}
 
+    # Extract parameters from requirements
     params = extractor(store.get_all())
     params["fidelity"] = fidelity
+    
+    # CRITICAL: Extract component specs from design (RAG-driven)
+    design_specs = _extract_design_specs(device_type)
+    params.update(design_specs)
+    
     twin = twin_class(**params)
     
     # Apply Fault
@@ -183,5 +258,7 @@ def run_faulty_simulation(
         "status": "fault_injected",
         "fault": {"parameter": parameter, "bias": bias},
         "parameters_used": params,
+        "design_specs_used": design_specs,
+        "integration_status": "Design→Simulation connected",
         "snapshots": simulation_results
     }

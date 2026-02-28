@@ -10,6 +10,8 @@ export const analyzeRequirement = (text, deviceType) =>
   client.post('/requirements/analyze', { text, device_type: deviceType })
 export const buildDesign = (deviceType) => client.post('/design/build/', null, { params: { device_type: deviceType } })
 export const generateDesignDetails = (deviceType) => client.post('/design/generate-details/', null, { params: { device_type: deviceType } })
+export const getDetailedDesign = (deviceType) => client.get('/design/detailed-design/', { params: { device_type: deviceType } })
+export const getVerificationMatrix = (deviceType) => client.get('/design/verification-matrix/', { params: { device_type: deviceType } })
 
 export const runSimulation = (deviceType, steps = 10, fidelity = 'L2') =>
   client.post('/simulation/run/', null, { params: { device_type: deviceType, steps, fidelity } })
