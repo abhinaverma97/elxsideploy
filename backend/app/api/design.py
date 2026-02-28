@@ -81,14 +81,60 @@ def build_design(device_type: str = "ventilator"):
             # Extract backup power
             if 'backup' in desc_lower or 'battery' in desc_lower:
                 requirements["power_backup"] = True
-    
+
+            # ── Dialysis-specific parsing ──────────────────────────────────────
+
+            # Blood flow rate (e.g. "500 ml/min blood pump")
+            blood_flow_match = re.search(r'(\d+)\s*ml\s*/\s*min', desc_lower)
+            if blood_flow_match and ('blood' in desc_lower or 'pump' in desc_lower):
+                requirements["blood_flow_rate_max"] = int(blood_flow_match.group(1))
+
+            # Dialysate flow
+            if 'dialysate' in desc_lower or 'bicarbonate' in desc_lower:
+                dial_match = re.search(r'(\d+)\s*ml\s*/\s*min', desc_lower)
+                if dial_match:
+                    requirements["dialysate_flow_rate"] = int(dial_match.group(1))
+
+            # Ultrafiltration rate (e.g. "uf rate 2000 ml/h")
+            uf_match = re.search(r'(\d+)\s*ml\s*/\s*h', desc_lower)
+            if uf_match and ('uf' in desc_lower or 'ultrafiltrat' in desc_lower or 'fluid removal' in desc_lower):
+                requirements["uf_rate_max"] = int(uf_match.group(1))
+
+            # Dialysate temperature range (e.g. "35-39°C")
+            temp_range_match = re.search(r'(\d+)\s*[-\u2013]\s*(\d+)\s*[\u00b0oc]', desc_lower)
+            if temp_range_match and ('dialysate' in desc_lower or 'temperature' in desc_lower):
+                requirements["temperature_range"] = [float(temp_range_match.group(1)), float(temp_range_match.group(2))]
+
+            # Conductivity (e.g. "14 mS/cm")
+            cond_match = re.search(r'([\d.]+)\s*ms\s*/\s*cm', desc_lower)
+            if cond_match:
+                requirements["conductivity_nominal_ms_cm"] = float(cond_match.group(1))
+                requirements["conductivity_range"] = True
+
     # Set device-specific defaults
     if device_type.lower() == "ventilator":
         requirements.setdefault("flow_rate_max", 120)
         requirements.setdefault("pressure_max", 40)
         if not requirements["monitoring"]:
             requirements["monitoring"] = ["pressure", "flow"]
-    
+
+    elif device_type.lower() == "dialysis":
+        requirements.setdefault("blood_flow_rate_max", 500)     # mL/min (IEC 60601-2-16)
+        requirements.setdefault("dialysate_flow_rate", 500)     # mL/min
+        requirements.setdefault("uf_rate_max", 4000)            # mL/h max
+        requirements.setdefault("temperature_range", [35.0, 39.0])  # °C
+        requirements.setdefault("conductivity_nominal_ms_cm", 14.0) # mS/cm
+        requirements.setdefault("conductivity_range", True)
+        requirements.setdefault("power_budget_w", 960)          # Class III power load
+        requirements.setdefault("power_backup", True)           # Mandatory Class III
+        if not requirements["monitoring"]:
+            requirements["monitoring"] = ["pressure", "temperature"]
+
+    elif device_type.lower() == "pulse_ox":
+        requirements.setdefault("power_budget_w", 5)
+        if not requirements["monitoring"]:
+            requirements["monitoring"] = ["spo2"]
+
     # Generate design dynamically
     engine = DynamicDesignEngine()
     design_output = engine.generate_design(requirements)
@@ -121,7 +167,7 @@ def build_design(device_type: str = "ventilator"):
 
     return {
         "device": device_type,
-        "class": "Class II" if device_type == "ventilator" else "Class III",
+        "class": "Class II" if device_type == "ventilator" else "Class III" if device_type == "dialysis" else "Class I",
         "subsystems": [s["id"] for s in design_output["subsystems"]],
         "raw": {
             "architecture": architecture_nodes,
