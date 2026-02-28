@@ -81,7 +81,7 @@ export default function SimulationView({ deviceType }) {
 				<IconComponent className="h-4 w-4" style={{ color }} />
 				<span className="text-xs font-bold tracking-wider uppercase" style={{ color }}>{label}</span>
 			</div>
-			<ResponsiveContainer width="100%" height="100%">
+			<ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
 				<LineChart data={chartData} margin={{ top: 30, right: 10, left: -20, bottom: 0 }}>
 					<CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
 					<XAxis dataKey="time" hide domain={[0, 12]} type="number" />

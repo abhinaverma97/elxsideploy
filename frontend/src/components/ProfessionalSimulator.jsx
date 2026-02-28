@@ -307,7 +307,7 @@ function TelemetryPanel({ simData, deviceConfig, fidelity, frozen, setFrozen, on
                                 <span className="text-[8px] text-[#878787] font-mono">{sig.unit}</span>
                             </div>
                             <div className="flex-1 min-h-0">
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                                     <AreaChart data={chartData} margin={{ top: 2, right: 2, left: -24, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id={`g${sig.key}`} x1="0" y1="0" x2="0" y2="1">

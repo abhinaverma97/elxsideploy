@@ -13,12 +13,21 @@ class DialysisTwin(BaseDigitalTwin):
         target_bfr: float = 300.0,  # Blood Flow Rate (mL/min)
         target_dfr: float = 500.0,  # Dialysate Flow Rate (mL/min)
         max_tmp:    float = 400.0,  # Transmembrane Pressure Alarm Limit (mmHg)
-        fidelity: str = "L3"
+        fidelity: str = "L3",
+        motor_type: str = None,
+        bubble_resolution: str = None,
+        isolation_rating: str = None,
+        **kwargs
     ):
         super().__init__(fidelity)
         self.target_bfr = target_bfr
         self.target_dfr = target_dfr
         self.max_tmp    = max_tmp
+        
+        # Design specs integration
+        self.motor_type = motor_type if motor_type else "Standard DC"
+        self.bubble_resolution = bubble_resolution if bubble_resolution else "10uL"
+        self.isolation_rating = isolation_rating if isolation_rating else "4kV"
 
         # Physiological / What-If states
         self.clot_factor = 1.0     # 1.0 = clean filter. >1 = clotting

@@ -329,9 +329,9 @@ export default function DiagramView({ deviceType, onDesignReady }) {
       case 'subsystem':
         // IEC 62304 §5.4: Subsystem/Module Design
         return (
-          <div className="space-y-6 flex flex-col h-full">
+          <div className="space-y-6">
             {subNodes.length > 0 && (
-              <div className="w-full h-[400px] border border-white/10 rounded-2xl overflow-hidden bg-[#212121] relative shadow-inner shrink-0 mb-4">
+              <div className="w-full h-[400px] border border-white/10 rounded-2xl overflow-hidden bg-[#212121] relative shadow-inner mb-4">
                 <ReactFlow
                   nodes={subNodes} edges={subEdges} onNodesChange={onSubNodesChange} onEdgesChange={onSubEdgesChange}
                   nodeTypes={nodeTypes} fitView fitViewOptions={{ padding: 0.1 }} minZoom={0.2} maxZoom={2} className="bg-[#212121]"
@@ -367,9 +367,9 @@ export default function DiagramView({ deviceType, onDesignReady }) {
           )
         }
         return (
-          <div className="space-y-6 flex flex-col h-full">
+          <div className="space-y-6">
             {detNodes.length > 0 && (
-              <div className="w-full h-[400px] border border-white/10 rounded-2xl overflow-hidden bg-[#212121] relative shadow-inner shrink-0 mb-4">
+              <div className="w-full h-[400px] border border-white/10 rounded-2xl overflow-hidden bg-[#212121] relative shadow-inner mb-4">
                 <ReactFlow
                   nodes={detNodes} edges={detEdges} onNodesChange={onDetNodesChange} onEdgesChange={onDetEdgesChange}
                   nodeTypes={nodeTypes} fitView fitViewOptions={{ padding: 0.1 }} minZoom={0.2} maxZoom={2} className="bg-[#212121]"
