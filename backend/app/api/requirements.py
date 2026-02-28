@@ -3,7 +3,8 @@ from pydantic import BaseModel
 from ..core.requirements.schema import Requirement
 from ..core.requirements.validator import validate_requirement
 from ..core.requirements.store import RequirementStore
-from ..core.requirements.nlp_analyzer import analyze_requirement_text
+# NO LLM - Using deterministic rule-based parser instead
+from ..core.requirements.deterministic_parser import analyze_requirement_text
 
 router = APIRouter()
 store = RequirementStore()

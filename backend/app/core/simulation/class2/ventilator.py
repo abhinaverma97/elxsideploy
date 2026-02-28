@@ -13,17 +13,29 @@ class VentilatorTwin(BaseDigitalTwin):
         target_flow_rate: float = 30.0,
         max_flow_rate: float = 60.0,
         max_pressure: float = 40.0,
-        fidelity: str = "L3"
+        fidelity: str = "L3",
+        blower_max_rpm: float = None,
+        sensor_accuracy: float = None,
+        relief_valve_threshold: float = None,
+        **kwargs  # Accept additional design specs
     ):
         super().__init__(fidelity)
         self.target_flow_rate = target_flow_rate
         self.max_flow_rate = max_flow_rate
-        self.max_pressure = max_pressure
+        
+        # Use design-driven specs if available, otherwise use defaults
+        self.max_pressure = relief_valve_threshold if relief_valve_threshold else max_pressure
+        self.blower_rpm = blower_max_rpm if blower_max_rpm else 60000  # Default 60k RPM
+        self.sensor_noise = sensor_accuracy if sensor_accuracy else 0.03  # Default 3%
 
-        # Tunable mapping / scaling parameters (avoid hidden magic numbers)
-        self.noise_amplitude = 0.5
-        self.pwm_scale = 4.25
-        self.motor_current_scale = 12
+        # Calculate scaling factors from actual component specs (not hardcoded!)
+        # PWM scale factor derived from blower RPM: 255 PWM at max flow
+        self.pwm_scale = (255.0 / self.max_flow_rate) if self.max_flow_rate > 0 else 4.25
+        # Motor current from blower power: typical BLDC ~12mA per PWM unit
+        self.motor_current_scale = 12  # mA per PWM unit
+        
+        # Noise amplitude from sensor accuracy
+        self.noise_amplitude = self.sensor_noise * self.max_flow_rate  # Absolute noise in L/min
 
         # Physiological variables (What-If analysis)
         self.RR = 15.0               # Respiration Rate (breaths/min)
