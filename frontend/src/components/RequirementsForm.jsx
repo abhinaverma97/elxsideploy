@@ -12,134 +12,78 @@ const SAMPLES = {
 	ventilator: {
 		id: 'REQ-VENT-001',
 		title: 'Peak Inspiratory Pressure (PIP) Limit',
-		description: 'The ventilator pneumatic delivery subsystem shall maintain Peak Inspiratory Pressure (PIP) within defined bounds to prevent barotrauma.',
+		description: 'The ventilator pneumatic delivery subsystem shall maintain Peak Inspiratory Pressure (PIP) within defined bounds to prevent barotrauma. The Main Control Unit shall command the inspiratory proportional valve using a PWM signal.',
 		type: 'performance',
 		priority: 'SHALL',
 		subsystem: 'PneumaticsControl',
-		parameter: 'PIP',
+		status: 'Draft',
+		fr_text: 'The pneumatics subsystem shall control and deliver inspiratory pressure between 5–40 cmH2O in real time during each breath cycle. The safety monitor shall detect airway pressure >60 cmH2O, trigger a P1 alarm, and actuate the exhalation valve.',
+		nfr_text: 'PIP regulation accuracy shall be within ±2 cmH2O at all flow rates. Alarm response time from threshold breach to valve open shall be ≤200ms.',
+		verification: { method: 'simulation', description: 'Run Digital Twin closed-loop patient lung simulation under fault conditions.' },
+
+		// Performance Bounds
+		bounds: {
+			parameter: 'PIP',
+			min: '5',
+			max: '40',
+			unit: 'cmH2O',
+			responseTimeMs: '100'
+		},
 		min_value: '5',
 		max_value: '40',
 		unit: 'cmH2O',
 		tolerance: '2.0',
-		status: 'Draft',
-		fr_text: 'The pneumatics subsystem shall control and deliver inspiratory pressure between 5–40 cmH2O in real time during each breath cycle.',
-		nfr_text: 'PIP regulation accuracy shall be within ±2 cmH2O at all flow rates. Pressure overshoot shall not exceed 5 cmH2O for more than 100ms.',
-		verification: { method: 'simulation', description: 'Run Digital Twin closed-loop patient lung simulation under fault conditions.' }
-	},
-	ventilator_interface: {
-		id: 'REQ-VENT-INT-001',
-		title: 'Proportional Valve Control Signal',
-		description: 'The Main Control Unit shall command the inspiratory proportional valve using a PWM signal.',
-		type: 'interface',
-		priority: 'SHALL',
-		subsystem: 'PneumaticsControl',
+		response_time_ms: '100',
+
+		// Interface
 		interface: 'MainMCU -> InspValve',
 		protocol: 'PWM (10kHz)',
-		parameter: 'DutyCycle',
-		status: 'Draft',
-		fr_text: 'The MCU shall output a 10kHz PWM signal on the valve control pin to modulate inspiratory gas flow.',
-		nfr_text: 'Signal latency from control loop trigger to valve actuation shall not exceed 2ms. PWM duty cycle resolution shall be minimum 12-bit.',
-		verification: { method: 'test', description: 'Oscilloscope measurement of MCU output pins.' }
-	},
-	ventilator_safety: {
-		id: 'REQ-VENT-SAF-001',
-		title: 'High Pressure Alarm Cut-off',
-		description: 'The system shall trigger a high priority alarm and open the exhalation valve if airway pressure exceeds the safety limit.',
-		type: 'safety',
-		priority: 'SHALL',
-		subsystem: 'SafetyMonitor',
-		parameter: 'AirwayPressure',
+
+		// Safety
 		hazard: 'Barotrauma / Over-pressurization',
 		severity: 'Critical',
 		probability: 'Occasional',
 		standard: 'ISO 80601-2-12',
 		clause: '201.12.4',
-		max_value: '60',
-		status: 'Draft',
-		fr_text: 'The safety monitor shall detect airway pressure >60 cmH2O, trigger a P1 alarm, and actuate the exhalation valve within one breath cycle.',
-		nfr_text: 'Alarm response time from threshold breach to valve open shall be ≤200ms. The safety path shall be hardware-independent from the main control loop.',
-		verification: { method: 'simulation', description: 'Simulate airway occlusion and measure electronic relief valve actuation time.' }
-	},
-	pulse_ox: {
-		id: 'REQ-POX-001',
-		title: 'SpO2 Measurement Accuracy',
-		description: 'The pulse oximeter shall measure functional oxygen saturation (SpO2) with high accuracy.',
-		type: 'performance',
-		priority: 'SHALL',
-		subsystem: 'SignalProcessing',
-		parameter: 'SpO2',
-		min_value: "70",
-		max_value: "100",
-		unit: '%',
-		tolerance: "2.0",
-		status: 'Approved',
-		fr_text: 'The signal processing subsystem shall compute SpO2 from red and infrared photoplethysmography signals and output a reading every second.',
-		nfr_text: 'SpO2 accuracy shall be ±2% RMS for saturations 70–100% per ISO 80601-2-61. Measurement latency shall not exceed 8 seconds from probe application.',
-		verification: { method: 'test', description: 'Functional verification using a calibrated SpO2 simulator.' }
+		parameter: 'AirwayPressure',
 	},
 	dialysis: {
 		id: 'REQ-DIAL-001',
-		title: 'Air-in-Blood Detection',
-		description: 'The system shall detect air bubbles in the extracorporeal blood circuit and stop the blood pump.',
+		title: 'Air-in-Blood Detection & Ultrafiltration',
+		description: 'The system shall detect air bubbles in the extracorporeal blood circuit and stop the blood pump, while the Master Controller commands the arterial peristaltic blood pump over CAN-FD.',
 		type: 'safety',
 		priority: 'SHALL',
 		subsystem: 'ExtracorporealSafety',
-		parameter: 'AirBubble',
+		status: 'Draft',
+		fr_text: 'The ultrasonic bubble detector shall continuously monitor the venous line and command an immediate blood pump stop upon air detection. The Master Controller shall calculate fluid removal rate.',
+		nfr_text: 'Bubble detection response time shall be ≤500ms. Cumulative UF volume error shall not exceed ±1% or ±50mL over a 4-hour session. ISO 10993 cytotoxicity parameters must be met.',
+		verification: { method: 'simulation', description: 'Inject air into virtual sensor and verify pump cutoff response time. Run 4-hour closed loop UF simulation.' },
+
+		// Performance Bounds
+		bounds: {
+			parameter: 'UFRate',
+			min: '0',
+			max: '4000',
+			unit: 'mL/hr',
+			responseTimeMs: '500'
+		},
+		min_value: '0',
+		max_value: '4000',
+		unit: 'mL/hr',
+		tolerance: '30.0',
+		response_time_ms: '500',
+
+		// Interface
+		interface: 'MainMCU -> ArterialPump',
+		protocol: 'CAN-FD (1Mbps)',
+
+		// Safety / Regulatory
 		hazard: 'Air Embolism (Critical)',
 		severity: 'Critical',
 		probability: 'Probable',
 		standard: 'ISO 60601-2-16',
 		clause: '201.12.4.102',
-		status: 'Draft',
-		fr_text: 'The ultrasonic bubble detector shall continuously monitor the venous line and command an immediate blood pump stop upon air detection.',
-		nfr_text: 'Bubble detection response time shall be ≤500ms. The detector shall identify bubbles ≥0.5mL. False positive rate shall be <1 per 24 hours of therapy.',
-		verification: { method: 'simulation', description: 'Inject air into virtual sensor and verify pump cutoff response time.' }
-	},
-	dialysis_performance: {
-		id: 'REQ-DIAL-PERF-001',
-		title: 'Ultrafiltration Rate Accuracy',
-		description: 'The Ultrafiltration balancing chamber shall maintain fluid removal accuracy across the entire therapy duration.',
-		type: 'performance',
-		priority: 'SHALL',
-		subsystem: 'Ultrafiltration',
-		parameter: 'UFRate',
-		min_value: '0',
-		max_value: '4000',
-		unit: 'mL/hr',
-		tolerance: '30.0',
-		status: 'Draft',
-		fr_text: 'The UF control loop shall calculate and maintain the prescribed fluid removal rate by balancing dialysate inflow and outflow using gravimetric feedback.',
-		nfr_text: 'Cumulative UF volume error shall not exceed ±1% or ±50mL over a 4-hour session. Control loop update rate shall be ≥1Hz.',
-		verification: { method: 'simulation', description: 'Run Digital Twin closed-loop fluid mass balance integration over 4 hours.' }
-	},
-	dialysis_interface: {
-		id: 'REQ-DIAL-INT-001',
-		title: 'Arterial Blood Pump Control Signal',
-		description: 'The Master Controller shall command the arterial peristaltic blood pump using dual CAN-FD streams for lockstep verification.',
-		type: 'interface',
-		priority: 'SHALL',
-		subsystem: 'ControlSystem',
-		interface: 'MainMCU -> ArterialPump',
-		protocol: 'CAN-FD (1Mbps)',
-		parameter: 'RotorSpeed_RPM',
-		status: 'Draft',
-		fr_text: 'The master MCU shall transmit rotor speed setpoints to the blood pump motor driver over redundant CAN-FD buses at 10ms intervals.',
-		nfr_text: 'CAN-FD message latency shall be ≤1ms. Both buses shall agree within one message cycle; discrepancy shall trigger a safe-state transition within 20ms.',
-		verification: { method: 'test', description: 'Logic analyzer capture of redundant CAN frames.' }
-	},
-	dialysis_regulatory: {
-		id: 'REQ-DIAL-REG-001',
-		title: 'Biocompatibility Compliance',
-		description: 'All blood-contacting components shall meet ISO 10993-1 requirements for biocompatibility.',
-		type: 'regulatory',
-		priority: 'SHALL',
-		subsystem: 'BloodCircuit',
-		status: 'Approved',
-		standard: 'ISO 10993-1',
-		clause: 'Clause 4',
-		fr_text: 'All tubing, connectors, and membrane materials in the blood circuit shall pass ISO 10993 cytotoxicity, haemocompatibility, and sensitisation tests.',
-		nfr_text: 'Biocompatibility certification shall be maintained for the full device lifecycle. Re-evaluation shall be triggered by any material or supplier change.',
-		verification: { method: 'inspection', description: 'Review material data sheets and leachables/extractables report.' }
+		parameter: 'AirBubble',
 	}
 }
 
@@ -168,7 +112,7 @@ const INITIAL_STATE = {
 	clause: '',
 	fr_text: '',
 	nfr_text: '',
-	verification: { method: 'test', description: '' }
+	verification: { method: 'simulation', description: '' }
 }
 
 export default function RequirementsForm({ deviceType, setView }) {
@@ -177,16 +121,8 @@ export default function RequirementsForm({ deviceType, setView }) {
 	const [msg, setMsg] = useState(null)
 	const [submittedReqs, setSubmittedReqs] = useState([])
 
-	const loadSample = (type = null) => {
-		let key = deviceType
-		if (type === 'interface' && deviceType === 'ventilator') key = 'ventilator_interface'
-		if (type === 'safety' && deviceType === 'ventilator') key = 'ventilator_safety'
-		if (type === 'performance' && deviceType === 'dialysis') key = 'dialysis_performance'
-		if (type === 'interface' && deviceType === 'dialysis') key = 'dialysis_interface'
-		if (type === 'safety' && deviceType === 'dialysis') key = 'dialysis'
-		if (type === 'regulatory' && deviceType === 'dialysis') key = 'dialysis_regulatory'
-
-		const sample = SAMPLES[key] || SAMPLES.ventilator
+	const loadSample = () => {
+		const sample = SAMPLES[deviceType] || SAMPLES.ventilator
 		setReq({ ...INITIAL_STATE, ...sample })
 		setMsg({ type: 'success', text: `Sample loaded: ${sample.title}` })
 	}
@@ -355,19 +291,6 @@ export default function RequirementsForm({ deviceType, setView }) {
 					<div className="space-y-4">
 						<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
 							<div className="space-y-1">
-								<Label className="text-xs text-[#878787] font-medium">Priority</Label>
-								<Select value={req.priority} onValueChange={v => setReq({ ...req, priority: v })}>
-									<SelectTrigger className="bg-[#171717] border-white/10 focus-visible:ring-1 focus-visible:ring-white/20 text-[#ececec]">
-										<SelectValue placeholder="Select priority..." />
-									</SelectTrigger>
-									<SelectContent className="bg-[#171717] border-white/10 text-white">
-										<SelectItem value="SHALL">SHALL (Mandatory)</SelectItem>
-										<SelectItem value="SHOULD">SHOULD (Highly Recommended)</SelectItem>
-										<SelectItem value="MAY">MAY (Optional)</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
-							<div className="space-y-1">
 								<Label className="text-xs text-[#878787] font-medium">Status</Label>
 								<Select value={req.status} onValueChange={v => setReq({ ...req, status: v })}>
 									<SelectTrigger className="bg-[#171717] border-white/10 focus-visible:ring-1 focus-visible:ring-white/20 text-[#ececec]">
@@ -380,7 +303,7 @@ export default function RequirementsForm({ deviceType, setView }) {
 									</SelectContent>
 								</Select>
 							</div>
-							<div className="space-y-1">
+							<div className="space-y-1 md:col-span-3">
 								<Label className="text-xs text-[#878787] font-medium">Target Subsystem</Label>
 								<Input list="subsystems" className="bg-[#171717] border-white/10 focus-visible:ring-1 focus-visible:ring-white/20 text-[#ececec]" value={req.subsystem} onChange={e => setReq({ ...req, subsystem: e.target.value })} placeholder="e.g. Blower Control" />
 								<datalist id="subsystems">
@@ -414,10 +337,6 @@ export default function RequirementsForm({ deviceType, setView }) {
 										</>
 									)}
 								</datalist>
-							</div>
-							<div className="space-y-1">
-								<Label className="text-xs text-[#878787] font-medium">Parent REQ ID</Label>
-								<Input className="bg-[#171717] border-white/10 focus-visible:ring-1 focus-visible:ring-white/20 text-[#ececec]" value={req.parentReq} onChange={e => setReq({ ...req, parentReq: e.target.value })} placeholder="Optional" />
 							</div>
 						</div>
 					</div>
@@ -564,29 +483,7 @@ export default function RequirementsForm({ deviceType, setView }) {
 						</div>
 					)}
 
-					<div className="space-y-4">
-						<SectionHeader title="Verification Strategy" icon={ClipboardList} />
-						<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-							<div className="space-y-1">
-								<Label className="text-xs text-[#878787] font-medium">Method</Label>
-								<Select value={req.verification.method} onValueChange={v => setReq({ ...req, verification: { ...req.verification, method: v } })}>
-									<SelectTrigger className="bg-[#171717] border-white/10 focus-visible:ring-1 focus-visible:ring-white/20 text-[#ececec]">
-										<SelectValue placeholder="Select method..." />
-									</SelectTrigger>
-									<SelectContent className="bg-[#171717] border-white/10 text-white">
-										<SelectItem value="test">Test</SelectItem>
-										<SelectItem value="simulation">Digital Twin Simulation</SelectItem>
-										<SelectItem value="analysis">Analysis</SelectItem>
-										<SelectItem value="inspection">Inspection</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
-							<div className="md:col-span-2 space-y-1">
-								<Label className="text-xs text-[#878787] font-medium">Evidence Plan</Label>
-								<Input className="bg-[#171717] border-white/10 focus-visible:ring-1 focus-visible:ring-white/20 text-[#ececec]" value={req.verification.description} onChange={e => setReq({ ...req, verification: { ...req.verification, description: e.target.value } })} required />
-							</div>
-						</div>
-					</div>
+
 
 					<div className="flex items-center justify-between border-t border-white/10 pt-6 mt-6">
 						<div className="flex items-center gap-4">

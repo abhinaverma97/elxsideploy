@@ -71,6 +71,9 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    /* Prevent white background on overscroll in Chrome */
+    background-color: #212121;
+    overscroll-behavior-y: none;
   }
 }
 

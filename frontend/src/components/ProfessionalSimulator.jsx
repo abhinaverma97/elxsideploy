@@ -36,7 +36,7 @@ function TopBar({ simState, time, speed, setSpeed, fidelity, setFidelity, onRun,
             <div className="flex items-center gap-3 min-w-0">
                 <div className="flex flex-col leading-none min-w-0">
                     <span className="text-[14px] font-bold text-[#ececec] truncate">{deviceConfig.label}</span>
-                    <span className="text-[11px] text-[#878787] uppercase tracking-widest font-semibold">{deviceConfig.classLabel} · Digital Twin</span>
+                    <span className="text-[11px] text-[#878787] uppercase tracking-widest font-semibold">Digital Twin</span>
                 </div>
             </div>
 

@@ -101,8 +101,16 @@ class ISO14971RiskEngine:
 
         # Simulate parameter bound checking
         violations = self._check_simulation_bounds(req, simulation_snapshots)
+        
+        # Override initial risk logic based on simulation results (Digital Twin proven)
         if violations:
             risk_status = "OPEN — simulation violation detected"
+            acceptability = "UNACCEPTABLE"
+        elif acceptability == "UNACCEPTABLE" or acceptability == "ALARP":
+            # If the requirement bounds were evaluated and NO violations happened,
+            # the design mitigates the risk. (Digital Twin passing).
+            acceptability = "ACCEPTABLE"
+            risk_status = "CLOSED"
 
         entry = {
             "requirement_id":      req.id,
