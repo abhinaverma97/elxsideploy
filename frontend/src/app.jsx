@@ -188,7 +188,7 @@ export default function App() {
             <div className="w-full h-full min-h-[600px] p-4 md:p-6 lg:p-10 pt-6 md:pt-10">
               {view === 'requirements' && <RequirementsForm deviceType={deviceType} setView={setView} onReqSubmit={() => setHasSubmittedReqs(true)} />}
               {view === 'design' && <DiagramView deviceType={deviceType} onDesignReady={setDesignData} setView={setView} hasSubmittedReqs={hasSubmittedReqs} />}
-              {view === 'trace' && <TraceabilityTable deviceType={deviceType} hasSubmittedReqs={hasSubmittedReqs} setView={setView} />}
+              {view === 'trace' && <TraceabilityTable deviceType={deviceType} hasSubmittedReqs={hasSubmittedReqs} designData={designData} setView={setView} />}
             </div>
           </div>
         )}

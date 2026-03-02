@@ -25,7 +25,7 @@ function _triggerBlobDownload(data, contentDisposition, fallbackName, mimeType) 
   window.URL.revokeObjectURL(url)
 }
 
-export default function TraceabilityTable({ deviceType, hasSubmittedReqs, setView }) {
+export default function TraceabilityTable({ deviceType, hasSubmittedReqs, setView, designData }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -72,7 +72,11 @@ export default function TraceabilityTable({ deviceType, hasSubmittedReqs, setVie
     }
   }
 
-  useEffect(() => { loadData() }, [deviceType])
+  useEffect(() => {
+    if (hasSubmittedReqs && designData) {
+      loadData()
+    }
+  }, [deviceType, hasSubmittedReqs, !!designData])
 
   return (
     <div className="space-y-6 w-full">
@@ -97,7 +101,7 @@ export default function TraceabilityTable({ deviceType, hasSubmittedReqs, setVie
         </div>
       </div>
 
-      {error && hasSubmittedReqs && (
+      {error && hasSubmittedReqs && designData && (
         <div className="p-4 border border-destructive/50 bg-destructive/10 rounded-xl flex items-center gap-3 text-sm text-destructive font-medium">
           <AlertTriangle className="h-5 w-5" />
           {error}
